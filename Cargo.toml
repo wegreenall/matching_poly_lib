@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 petgraph = "0.6.3"
 polynomial = "0.2.4"
+tailcall = "0.1.5"

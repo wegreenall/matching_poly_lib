@@ -1,3 +1,4 @@
+#[allow(unreachable_code)]
 use crate::matching::Graph;
 use std::mem::size_of;
 
@@ -16,7 +17,9 @@ static mut POLY: [u64; size_of::<usize>()*8] = [0; size_of::<usize>()*8];
 pub fn calculate_matching_polynomial_static(graph: Graph) -> [u64; size_of::<usize>()*8] {
    unsafe {
        // clear the memory
-       POLY = [0; size_of::<usize>()*8];
+       for i in 0..size_of::<usize>()*8 {
+           POLY[i] = 0;
+       }
        _calculate_matching_polynomial_static(graph);
        return POLY;
    }
@@ -28,7 +31,7 @@ unsafe fn _calculate_matching_polynomial_static(graph: Graph) {
         POLY[node_count] += 1;
     } else {
         let (graph_prime, graph_prime_prime) = graph.get_graph_primes();
-        _calculate_matching_polynomial_static(graph_prime);
         _calculate_matching_polynomial_static(graph_prime_prime);
+        _calculate_matching_polynomial_static(graph_prime); // put this at the end as I think
     }
 }

@@ -7,7 +7,6 @@ use std::thread;
 
 
 const MAX_NODES: usize = mem::size_of::<usize>()*8;
-
 /// We represent graphs as a seequence of integers in which each bit represents
 /// an edge. The first bit however represents whether that node is contained
 /// in the graph; removing a node implies zero-ing this bit.
@@ -27,10 +26,9 @@ impl Graph {
         self.data[node] = 0;
 
         // Now remove its connected edges
-        self.data.iter_mut()
+        self.data
+            .iter_mut()
             .for_each(|x| *x &= !(1<<graph_size.saturating_sub(node+1)));
-        // would it be better to consider an edge for removal iff its nodes
-        // are both relevant?
     }
 
     pub fn remove_edge(&mut self, node1: usize, node2: usize, graph_size: usize) {
@@ -149,7 +147,7 @@ impl Graph {
         // removed
         //  the edge to drop goes between the starting node and the end of the first edge
         let clean_starting_node_data = starting_node_data &!(1<<(graph_size - starting_node - 1));
-        let mut end_node: usize = 0;
+        let mut end_node: usize;
         if drop_first_connected_edge {
             end_node = clean_starting_node_data.leading_zeros() as usize - comparison_point;
         } else {
