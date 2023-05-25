@@ -4,22 +4,32 @@ use std::mem::size_of;
 use polynomial::Polynomial;
 use std::mem;
 use std::thread;
+use std::cmp::PartialEq;
 
 
 const MAX_NODES: usize = mem::size_of::<usize>()*8;
 /// We represent graphs as a seequence of integers in which each bit represents
 /// an edge. The first bit however represents whether that node is contained
 /// in the graph; removing a node implies zero-ing this bit.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Graph {
     data: [usize; size_of::<usize>()*8],
 }
 
 impl Graph {
-   pub fn new(data: [usize; size_of::<usize>()*8]) -> Graph {
+   pub const fn new() -> Graph {
+        let blank_data = [0; size_of::<usize>()*8];
+         Graph {
+               data: blank_data,
+         }
+   }
+   pub fn from(data: [usize; size_of::<usize>()*8]) -> Graph {
         Graph {
             data,
         }
+    }
+    pub fn data(self) -> [usize; size_of::<usize>()*8] {
+        self.data
     }
     pub fn remove_node(&mut self, node: usize, graph_size : usize) {
         // remove node from adjacency list
@@ -57,17 +67,7 @@ impl Graph {
             .filter(|x| x> &&(0 as usize)) // i.e. get the ones that are valid
             .count()
     }
-    //pub fn edge_count(&self) -> usize {
-        //// count the number of edges in the graph
-        //self.data
-            //.iter()
-            //.enumerate()
-            //.map(|(i, x)| x>>i)
-            //.filter(|x| (x & 1)==1) // i.e. get the ones that are valid
-            //.map(|x| x.count_ones()) // count the number of ones in each, and subtract the
-                                       //// one that represents the node itself
-            //.count()
-    //}
+
     /// checks whether the graph is edgeless, i.e. if each of the elements
     /// is a power of two or 0
     pub fn edgeless(&self) -> bool {
@@ -77,8 +77,8 @@ impl Graph {
     } 
 
     pub fn get_graph_primes(self) -> (Graph, Graph) {
-        let mut new_graph = self.clone();
-        let mut new_graph2 = self.clone();
+        let mut new_graph = self; // Should copy
+        let mut new_graph2 = self; // Should copy
 
         // get the relevant edge
         let (start_node, end_node, graph_size) = self.get_relevant_edge();
@@ -94,20 +94,21 @@ impl Graph {
 
     /// To step through and calculate the matching polynomial, we use the edge
     /// remove recurrence:
-    /// Q(g, x) = Q(G', x) - Q(G'', x)
+    /// m(g, x) = m(G', x) - m(G'', x)
     ///
     /// G' = G - e
     /// G'' = G - {v, w} where {w, v} are the nodes
-    /// at the ends of e
+    /// at the ends of e.
     ///
     /// Thus, we get get the "relevant edge e" which is the first edge in the
-    /// first remaining node. Since the nodes are ordered in decreasing order o
-    /// f degree, dropping the first edge we find drops the most edges from the
-    /// graph, since it the nodes at its ends will be the "most connected" 
+    /// first remaining node. Since the nodes are ordered in decreasing order 
+    /// of degree, dropping the first edge we find drops the most edges from 
+    /// the graph, since the nodes at its ends will be the "most connected" 
     /// nodes.
-    fn get_relevant_edge(&self) -> (usize, usize, usize) {
+    pub fn get_relevant_edge(&self) -> (usize, usize, usize) {
         // since the nodes are ordered in INCREASING order of degree, we can
-        // just drop the first edge we find, on the first still-relevant node.
+        // just drop the last(right-most in the binary representation)
+        // edge we find, on the first still-relevant node.
         // starting_node: the index of the first node that still has edges from it
 
         // if drop_most_connected_edge is true, we delete the first connected edge
@@ -147,7 +148,7 @@ impl Graph {
         // removed
         //  the edge to drop goes between the starting node and the end of the first edge
         let clean_starting_node_data = starting_node_data &!(1<<(graph_size - starting_node - 1));
-        let mut end_node: usize;
+        let end_node: usize;
         if drop_first_connected_edge {
             end_node = clean_starting_node_data.leading_zeros() as usize - comparison_point;
         } else {
@@ -169,6 +170,18 @@ impl Graph {
             println!("\n");
         }
         (starting_node, end_node, graph_size)
+    }
+}
+
+/// Equality of the graphs will have be done based on if they are isomorphic to 
+/// each other. This problem is, in general, NP-complete. However, we can
+/// use the fact that the graphs are undirected and unweighted to simplify the
+/// problem. We can then use the fact that the graphs are ordered in decreasing
+/// order of degree to simplify the problem further.
+/// 
+impl PartialEq for Graph {
+    fn eq(&self, other: &Graph) -> bool {
+        self.data == other.data
     }
 }
 
