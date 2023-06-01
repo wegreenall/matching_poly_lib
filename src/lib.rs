@@ -1,7 +1,7 @@
 pub mod matching;
 pub mod matching_raw_memory;
 
-use matching::calculate_matching_polynomial_static;
+use matching::calculate_matching_polynomial_pointer;
 use matching::{
     get_deck, get_matching_polies_stable_graph, Graph, _calculate_matching_polynomial_binary,
 };
@@ -21,7 +21,7 @@ mod tests {
         ];
         let graph = Graph::from(data); // the fully connected graph
         let graph_size = graph.graph_size();
-        let matching_poly = calculate_matching_polynomial_static(graph);
+        let matching_poly = calculate_matching_polynomial_pointer(graph);
         //println!("matching poly: {:?}", matching_poly);
         let graph2 = Graph::from(data); // the fully connected graph
         let matching_poly_2 = _calculate_matching_polynomial_binary(graph2);
@@ -39,7 +39,7 @@ mod tests {
         ];
         let graph = Graph::from(data); // the fully connected graph
         let graph_size = graph.graph_size();
-        let matching_poly = calculate_matching_polynomial_static(graph);
+        let matching_poly = calculate_matching_polynomial_pointer(graph);
 
         let graph2 = Graph::from(data); // the fully connected graph
         let matching_poly_2 = _calculate_matching_polynomial_binary(graph2);

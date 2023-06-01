@@ -15,7 +15,7 @@ use std::mem::size_of;
 
 const POLY_SIZE: usize = size_of::<usize>()*8;
 //static mut POLY: [u64; size_of::<usize>()*8] = [0; size_of::<usize>()*8]; 
-pub fn calculate_matching_polynomial_static(graph: Graph) -> [u64; size_of::<usize>()*8] {
+pub fn calculate_matching_polynomial_pointer(graph: Graph) -> [u64; size_of::<usize>()*8] {
    let poly: &mut [u64; POLY_SIZE] = &mut [0; POLY_SIZE];
    unsafe {
        // clear the memory
