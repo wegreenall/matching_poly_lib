@@ -1,4 +1,4 @@
-mod matchings;
+mod example_petgraphs;
 mod graphs;
 mod petgraph;
 mod matching_poly;
