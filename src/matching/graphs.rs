@@ -305,7 +305,7 @@ pub fn _calculate_weighted_matching_polynomial_binary(weighted_graph: WeightedGr
         let poly_2 = _calculate_weighted_matching_polynomial_binary(graph_prime_prime);
          
         // multiply poly_2 by the squared_weight
-        poly_2.poly_multiply(weight as f32); 
+        let poly_2 = poly_2.poly_multiply(weight as f32); 
 
         let poly = poly_1 + poly_2;
         return poly
