@@ -177,12 +177,12 @@ impl Graph {
 #[derive(Debug, Clone, Copy)]
 pub struct WeightedGraph{
     graph: Graph,
-    weights: [f32; MAX_NODES*MAX_NODES],
+    weights: [u64; MAX_NODES*MAX_NODES],
 }
 
 impl WeightedGraph {
        pub const fn new() -> WeightedGraph {
-           let blank_weights = [0.0 as f32; MAX_NODES*MAX_NODES];
+           let blank_weights = [0.0 as u64; MAX_NODES*MAX_NODES];
            let blank_data = [0; size_of::<usize>()*8];
 
              WeightedGraph {
@@ -304,7 +304,6 @@ pub fn _calculate_weighted_matching_polynomial_binary(weighted_graph: WeightedGr
         let poly_1 = _calculate_weighted_matching_polynomial_binary(graph_prime);
         let poly_2 = _calculate_weighted_matching_polynomial_binary(graph_prime_prime);
          
-        // multiply poly_2 by the squared_weight
         // convert the weight to a 1d polynomial to make it multiplicable
         let new_poly = Polynomial::new(vec![weight as u64]);
 
