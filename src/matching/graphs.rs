@@ -305,21 +305,10 @@ pub fn _calculate_weighted_matching_polynomial_binary(weighted_graph: WeightedGr
         let poly_2 = _calculate_weighted_matching_polynomial_binary(graph_prime_prime);
          
         // multiply poly_2 by the squared_weight
-        let poly_2 = poly_2.poly_multiply(weight as f32); 
+        // convert the weight to a 1d polynomial to make it multiplicable
+        let new_poly = Polynomial::new(vec![weight as u64]);
 
-        let poly = poly_1 + poly_2;
+        let poly = poly_1 + new_poly * poly_2;
         return poly
     }
 } 
-
-trait PolyMultiply<T> {
-    fn poly_multiply(&self, other: T) -> Self;
-}
-
-impl PolyMultiply<f32> for Polynomial<u64> {
-    fn poly_multiply(&self, other: f32) -> Polynomial<u64> {
-        let mut new_coeffics = self.data().clone().to_owned();
-        new_coeffics.iter_mut().for_each(|x| *x = *x * other as u64);
-        Polynomial::new(new_coeffics)
-    }
-}
