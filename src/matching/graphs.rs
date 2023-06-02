@@ -181,36 +181,33 @@ pub struct WeightedGraph{
 }
 
 impl WeightedGraph {
-       pub const fn new() -> WeightedGraph {
-           let blank_weights = [0.0 as u64; MAX_NODES*MAX_NODES];
-           let blank_data = [0; size_of::<usize>()*8];
+    pub const fn new() -> WeightedGraph {
+         let blank_weights = [0 as u64; MAX_NODES*MAX_NODES];
+         WeightedGraph {
+             graph: Graph::new(),
+             weights: blank_weights,
+         }
+   }
 
-             WeightedGraph {
-                 graph: Graph::new(),
-                 weights: blank_weights,
-             }
-       }
+   pub fn get_graph_primes(self) -> (WeightedGraph, WeightedGraph, u64) {
+       let mut new_graph = self.graph; // Should copy
+       let mut new_graph2 = self.graph; // Should copy
 
-    pub fn get_graph_primes(self) -> (WeightedGraph, WeightedGraph, f32) {
-        let mut new_graph = self.graph; // Should copy
-        let mut new_graph2 = self.graph; // Should copy
+       // get the relevant edge
+       let (start_node, end_node, graph_size) = self.graph.get_relevant_edge();
+       
+       // G' = G - e
+       new_graph.remove_edge(start_node, end_node, graph_size);
+       
+       // G'' = G - {v, w} where {w, v} are the nodes connected to e
+       new_graph2.remove_node(start_node, graph_size);
+       new_graph2.remove_node(end_node, graph_size);
 
-        // get the relevant edge
-        let (start_node, end_node, graph_size) = self.graph.get_relevant_edge();
-        
-        // G' = G - e
-        new_graph.remove_edge(start_node, end_node, graph_size);
-        
-        // G'' = G - {v, w} where {w, v} are the nodes connected to e
-        new_graph2.remove_node(start_node, graph_size);
-        new_graph2.remove_node(end_node, graph_size);
-
-        // clean the weights for each of the new ones
-        (WeightedGraph{graph: new_graph, weights: self.weights},
-         WeightedGraph{graph: new_graph2, weights: self.weights},
-         self.weights[start_node*MAX_NODES + end_node]) // pull the right weight from the weights
-    }
-    
+       // clean the weights for each of the new ones
+       (WeightedGraph{graph: new_graph, weights: self.weights},
+        WeightedGraph{graph: new_graph2, weights: self.weights},
+        self.weights[start_node*MAX_NODES + end_node]) // pull the right weight from the weights
+   }
 }
 
 /// Equality of the graphs will have be done based on if they are isomorphic to 
@@ -234,7 +231,6 @@ impl std::fmt::Display for Graph {
         result
     }
 }
-
 
 pub fn get_deck(graph: &Graph) -> Vec<Graph>{
     let mut deck = Vec::<Graph>::new();
