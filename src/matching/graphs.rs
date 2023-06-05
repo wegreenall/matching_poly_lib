@@ -1,13 +1,11 @@
-//#![allow(dead_code, unused_variables)]
 use core::fmt;
 use std::mem::size_of;
 use polynomial::Polynomial;
 use std::mem;
-use std::thread;
 use std::cmp::PartialEq;
 
-
 const MAX_NODES: usize = mem::size_of::<usize>()*8;
+
 /// We represent graphs as a seequence of integers in which each bit represents
 /// an edge. The first bit however represents whether that node is contained
 /// in the graph; removing a node implies zero-ing this bit.
@@ -174,41 +172,6 @@ impl Graph {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct WeightedGraph{
-    graph: Graph,
-    weights: [u64; MAX_NODES*MAX_NODES],
-}
-
-impl WeightedGraph {
-    pub const fn new() -> WeightedGraph {
-         let blank_weights = [0 as u64; MAX_NODES*MAX_NODES];
-         WeightedGraph {
-             graph: Graph::new(),
-             weights: blank_weights,
-         }
-   }
-
-   pub fn get_graph_primes(self) -> (WeightedGraph, WeightedGraph, u64) {
-       let mut new_graph = self.graph; // Should copy
-       let mut new_graph2 = self.graph; // Should copy
-
-       // get the relevant edge
-       let (start_node, end_node, graph_size) = self.graph.get_relevant_edge();
-       
-       // G' = G - e
-       new_graph.remove_edge(start_node, end_node, graph_size);
-       
-       // G'' = G - {v, w} where {w, v} are the nodes connected to e
-       new_graph2.remove_node(start_node, graph_size);
-       new_graph2.remove_node(end_node, graph_size);
-
-       // clean the weights for each of the new ones
-       (WeightedGraph{graph: new_graph, weights: self.weights},
-        WeightedGraph{graph: new_graph2, weights: self.weights},
-        self.weights[start_node*MAX_NODES + end_node]) // pull the right weight from the weights
-   }
-}
 
 /// Equality of the graphs will have be done based on if they are isomorphic to 
 /// each other. This problem is, in general, NP-complete. However, we can
@@ -274,36 +237,3 @@ pub fn _calculate_matching_polynomial_binary(graph: Graph) -> Polynomial<u64> {
     }
 } 
 
-/// The weighted matching polynomial is defined via the edge-deletion recurrence:
-/// Q(G, x) = Q(G - e, x) + w(e)^2 * Q(G - N(e), x) 
-/// where e is an edge in G, and N(e) is the pair of nodes connected to e,
-/// and w(e) is the weight associated with e. 
-pub fn _calculate_weighted_matching_polynomial_binary(weighted_graph: WeightedGraph) -> Polynomial<u64> {
-    // the base case for the process is that the graph is edgeless.
-    // This means that, of the remaining nodes, each of their integer
-    // representations is a power of two.
-    if weighted_graph.graph.edgeless() { // i.e. we're at the base case.
-        // produce a sequence of coefficients the same length as the number of vertices
-        //println!("Hit edgeless graph! with {} nodes", graph.edgeless_node_count());
-        let mut coeffics = vec![0; weighted_graph.graph.edgeless_node_count()];
-        coeffics.push(1);
-        let poly = Polynomial::new(coeffics);
-        //println!("Polynomial: {:?}", poly);
-        //println!("graph {:?}", graph.data);
-        return poly
-    } else {
-        // get G' and G''
-        // G' = G - an edge
-        // G'' = G - the nodes connected to the edge removed to get G'
-        let (graph_prime, graph_prime_prime, weight) = weighted_graph.get_graph_primes();
-
-        let poly_1 = _calculate_weighted_matching_polynomial_binary(graph_prime);
-        let poly_2 = _calculate_weighted_matching_polynomial_binary(graph_prime_prime);
-         
-        // convert the weight to a 1d polynomial to make it multiplicable
-        let new_poly = Polynomial::new(vec![weight as u64]);
-
-        let poly = poly_1 + new_poly * poly_2;
-        return poly
-    }
-} 

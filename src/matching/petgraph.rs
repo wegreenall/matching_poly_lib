@@ -1,12 +1,10 @@
-#![allow(dead_code, unused_variables)]
-use petgraph::{graph::{NodeIndex, UnGraph}, stable_graph::StableGraph};
+//#![allow(dead_code, unused_variables)]
+use petgraph::stable_graph::StableGraph;
 use petgraph::Undirected;
-//use polynomial::Polynomial;
 use polynomial::Polynomial;
 
 fn drop_last_edge(graph: &StableGraph<i32, (), Undirected>) -> StableGraph<i32, (), Undirected> {
     let mut new_graph = graph.clone();
-    let edge_count = new_graph.edge_count();
     
     let edge_indices = new_graph.edge_indices();
     let last_edge = edge_indices.last().unwrap();
@@ -19,7 +17,6 @@ fn drop_last_nodes(graph: &StableGraph<i32, (), Undirected>) -> StableGraph<i32,
     let mut new_graph = graph.clone();
 
     // get its edge count and use it to get the edges connected to the last node
-    let node_count = new_graph.node_count();
     let edge_indices = new_graph.edge_indices();
     let last_edge = edge_indices.last().unwrap();
     let last_nodes = new_graph.edge_endpoints(last_edge);
