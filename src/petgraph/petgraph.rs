@@ -22,13 +22,10 @@ fn drop_last_nodes(graph: &StableGraph<i32, (), Undirected>) -> StableGraph<i32,
     let last_nodes = new_graph.edge_endpoints(last_edge);
     //println!("Last nodes: {:?}", last_nodes);
     if !last_nodes.is_none() {
-        //println!("Last node zero {:?}", last_nodes.unwrap().0);
-        //println!("Last node one {:?}", last_nodes.unwrap().1);
         new_graph.remove_node(last_nodes.unwrap().1);
         new_graph.remove_node(last_nodes.unwrap().0);
     }
     // remove the nodes at the ends of the last edge
-    //println!("Last edge weight: {:?}", last);
     //let nodes = last_edge.
 
     //graph_prime.remove_node(NodeIndex::new(node_count - 2));

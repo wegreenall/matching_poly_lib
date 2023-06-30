@@ -1,5 +1,5 @@
 #[allow(unreachable_code)]
-use crate::matching::Graph;
+use crate::graph_matching::Graph;
 use std::mem::size_of;
 
 

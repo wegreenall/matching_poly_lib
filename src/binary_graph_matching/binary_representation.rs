@@ -3,7 +3,6 @@ use core::fmt;
 use std::mem::size_of;
 use polynomial::Polynomial;
 use std::mem;
-use std::thread;
 use std::cmp::PartialEq;
 
 

@@ -1,14 +1,16 @@
-pub mod matching;
+//pub mod matching;
+pub mod graph_matching;
 pub mod matching_raw_memory;
+pub mod weighted_graph_matching;
+pub mod petgraph;
+pub mod binary_graph_matching;
 
-use matching::calculate_matching_polynomial_pointer;
-use matching::{
-    get_deck, get_matching_polies_stable_graph,
-    Graph,
-    _calculate_matching_polynomial_binary,
-    _calculate_weighted_matching_polynomial_binary,
-    WeightedGraph, get_weighted_deck
-};
+pub use graph_matching::{Graph, calculate_matching_polynomial_pointer, _calculate_matching_polynomial_binary};
+//use matching::calculate_matching_polynomial_pointer;
+//use matching::{
+    //get_deck, get_matching_polies_stable_graph,
+//};
+use crate::weighted_graph_matching::{WeightedGraph, _calculate_weighted_matching_polynomial_binary, get_weighted_deck};
 
 use matching_raw_memory::{calculate_matching_polynomial_raw, GraphData, GraphProperties};
 
@@ -97,16 +99,16 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
-        let true_weights_1 = [1, 1, 1, 1, 
-                              1, 1, 1, 1,
-                              1, 1, 1, 1, 
-                              1, 1, 1, 1];
-        let true_weights_2 = [2, 2, 2, 2, 
-                              2, 2, 2, 2,
-                              2, 2, 2, 2, 
-                              2, 2, 2, 2];
-        let mut weights_1: [u64; 4096] = [0; 4096];
-        let mut weights_2: [u64; 4096] = [0; 4096];
+        let true_weights_1: [f32; 16] = [1.0, 1.0, 1.0, 1.0, 
+                              1.0, 1.0, 1.0, 1.0,
+                              1.0, 1.0, 1.0, 1.0, 
+                              1.0, 1.0, 1.0, 1.0];
+        let true_weights_2: [f32; 16] = [2.0, 2.0, 2.0, 2.0, 
+                              2.0, 2.0, 2.0, 2.0,
+                              2.0, 2.0, 2.0, 2.0, 
+                              2.0, 2.0, 2.0, 2.0];
+        let mut weights_1: [f32; 4096] = [0.0; 4096];
+        let mut weights_2: [f32; 4096] = [0.0; 4096];
         weights_1[..16].copy_from_slice(&true_weights_1);
         weights_2[..16].copy_from_slice(&true_weights_2);
         let weighted_graph_1 = WeightedGraph::from(data, weights_1); // the fully connected graph
@@ -120,7 +122,40 @@ mod tests {
         let matching_polynomial_2 = _calculate_matching_polynomial_binary(graph_2);
         assert_eq!(matching_polynomial_1.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(matching_polynomial_2.data(), &[1, 0, 3, 0, 1]);
-        assert_eq!(weighted_matching_polynomial_1.data(), &[1, 0, 3, 0, 1]);
-        assert_eq!(weighted_matching_polynomial_2.data(), &[16, 0, 12, 0, 1]);
+        assert_eq!(weighted_matching_polynomial_1.data(), &[1.0, 0.0, 3.0, 0.0, 1.0]);
+        assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
+    }
+    #[test]
+    fn weighted_polynomial_test_2() {
+        let data = [
+            9, 6, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let true_weights_1: [f32; 16] = [1.0, 1.0, 1.0, 1.0, 
+                              1.0, 1.0, 1.0, 1.0,
+                              1.0, 1.0, 1.0, 1.0, 
+                              1.0, 1.0, 1.0, 1.0];
+        let true_weights_2: [f32; 16] = [2.0, 2.0, 2.0, 2.0, 
+                              2.0, 2.0, 2.0, 2.0,
+                              2.0, 2.0, 2.0, 2.0, 
+                              2.0, 2.0, 2.0, 2.0];
+        let mut weights_1: [f32; 4096] = [0.0; 4096];
+        let mut weights_2: [f32; 4096] = [0.0; 4096];
+        weights_1[..16].copy_from_slice(&true_weights_1);
+        weights_2[..16].copy_from_slice(&true_weights_2);
+        let weighted_graph_1 = WeightedGraph::from(data, weights_1); // the fully connected graph
+        let weighted_graph_2 = WeightedGraph::from(data, weights_2); // the fully connected graph
+        let graph_1 = Graph::from(data); // the fully connected graph
+        let graph_2 = Graph::from(data); // the fully connected graph
+                                                        //
+        let weighted_matching_polynomial_1 = _calculate_weighted_matching_polynomial_binary(weighted_graph_1);
+        let weighted_matching_polynomial_2 = _calculate_weighted_matching_polynomial_binary(weighted_graph_2);
+        let matching_polynomial_1 = _calculate_matching_polynomial_binary(graph_1);
+        let matching_polynomial_2 = _calculate_matching_polynomial_binary(graph_2);
+        assert_eq!(matching_polynomial_1.data(), &[1, 0, 3, 0, 1]);
+        assert_eq!(matching_polynomial_2.data(), &[1, 0, 3, 0, 1]);
+        assert_eq!(weighted_matching_polynomial_1.data(), &[1.0, 0.0, 3.0, 0.0, 1.0]);
+        assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
     }
 }
