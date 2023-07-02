@@ -12,6 +12,7 @@ const MAX_NODES: usize = mem::size_of::<usize>()*8;
 #[derive(Debug, Clone, Copy)]
 pub struct Graph {
     data: [usize; size_of::<usize>()*8],
+    initial_graph_size: usize,
 }
 
 
@@ -20,11 +21,13 @@ impl Graph {
         let blank_data = [0; size_of::<usize>()*8];
          Graph {
                data: blank_data,
+               initial_graph_size: 0,
          }
    }
    pub fn from(data: [usize; size_of::<usize>()*8]) -> Graph {
         Graph {
             data,
+            initial_graph_size: data.iter().filter(|x| x> &&(0 as usize)).count(),
         }
     }
     pub fn data(self) -> [usize; size_of::<usize>()*8] {
@@ -65,6 +68,10 @@ impl Graph {
             .iter()
             .filter(|x| x> &&(0 as usize)) // i.e. get the ones that are valid
             .count()
+    }
+
+    pub fn initial_graph_size(&self) -> usize{
+        self.initial_graph_size  
     }
 
     /// checks whether the graph is edgeless, i.e. if each of the elements
@@ -110,10 +117,6 @@ impl Graph {
         // edge we find, on the first still-relevant node.
         // starting_node: the index of the first node that still has edges from it
 
-        // if drop_most_connected_edge is true, we delete the first connected edge
-        // we find on the first relevant node. Otherwise, we delete the "last"
-        // edge for the first relevant node.
-        let drop_first_connected_edge: bool = false;
 
         let starting_node = self.data
             .iter()
@@ -148,6 +151,11 @@ impl Graph {
         //  the edge to drop goes between the starting node and the end of the first edge
         let clean_starting_node_data = starting_node_data &!(1<<(graph_size - starting_node - 1));
         let end_node: usize;
+
+        // if drop_most_connected_edge is true, we delete the first connected edge
+        // we find on the first relevant node. Otherwise, we delete the "last"
+        // edge for the first relevant node.
+        let drop_first_connected_edge: bool = false;
         if drop_first_connected_edge {
             end_node = clean_starting_node_data.leading_zeros() as usize - comparison_point;
         } else {
@@ -159,14 +167,13 @@ impl Graph {
         if print_stuff {
             println!("\n");
             println!("starting_node {}", starting_node);
+            println!("end_node {}", end_node);
             println!("starting_node_data {:b}", starting_node_data);
             println!("MAX NODES: {}", MAX_NODES);
             println!("graph_size: {} ", graph_size);
             println!("comparison_point {}", comparison_point);
             println!("clean_starting_node_data {:b}", clean_starting_node_data);
             println!("clean_starting_node_data leading zeros: {}", clean_starting_node_data.leading_zeros());
-            println!("end_node {}", end_node);
-            println!("\n");
         }
         (starting_node, end_node, graph_size)
     }

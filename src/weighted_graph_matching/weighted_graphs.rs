@@ -43,11 +43,12 @@ impl WeightedGraph {
        // G'' = G - {v, w} where {w, v} are the nodes connected to e
        new_graph2.remove_node(start_node, graph_size);
        new_graph2.remove_node(end_node, graph_size);
+       let weight = self.weights[start_node * self.graph.initial_graph_size() + end_node];
 
        // clean the weights for each of the new ones
        (WeightedGraph{graph: new_graph, weights: self.weights},
         WeightedGraph{graph: new_graph2, weights: self.weights},
-        self.weights[start_node * self.graph.graph_size() + end_node]) // pull the right weight from the weights
+        weight) // pull the right weight from the weights
    }
 }
 
@@ -73,13 +74,11 @@ pub fn _calculate_weighted_matching_polynomial_binary(weighted_graph: WeightedGr
     // representations is a power of two.
     if weighted_graph.graph.edgeless() { // i.e. we're at the base case.
         // produce a sequence of coefficients the same length as the number of vertices
-        //println!("Hit edgeless graph! with {} nodes", graph.edgeless_node_count());
         let mut coeffics = vec![0.0; weighted_graph.graph.edgeless_node_count()];
         coeffics.push(1.0);
         let poly = Polynomial::new(coeffics);
-        //println!("Polynomial: {:?}", poly);
-        //println!("graph {:?}", graph.data);
         return poly
+
     } else {
         // get G' and G''
         // G' = G - an edge
