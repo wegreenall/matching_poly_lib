@@ -4,8 +4,12 @@ pub mod matching_raw_memory;
 pub mod weighted_graph_matching;
 pub mod petgraph;
 pub mod binary_graph_matching;
+pub mod polynomials;
 
 pub use graph_matching::{Graph, calculate_matching_polynomial_pointer, _calculate_matching_polynomial_binary};
+use polynomial::Polynomial;
+use polynomials::{poly2herme, herme2poly, hermadd, hermemulx};
+
 //use matching::calculate_matching_polynomial_pointer;
 //use matching::{
     //get_deck, get_matching_polies_stable_graph,
@@ -52,6 +56,23 @@ mod tests {
 
         assert_eq!(&matching_poly[..=graph_size], matching_poly_2.data());
     }
+
+    //#[test]
+    //fn ode_graph_test() {
+        //let data = [
+            //268435457, 132450496, 67190800, 33947658, 17842179, 9846786, 4751556, 2654372, 1441825, 622692, 393227, 131083, 115997, 32981, 17015, 16383, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            //8191, 4095, 2047, 1023, 511, 255, 127, 63, 31, 15, 7, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0, 0,
+        //];
+        //let graph = Graph::from(data);
+        //let graph_size = graph.graph_size();
+        //let matching_poly = calculate_matching_polynomial_pointer(graph);
+
+        //let graph2 = Graph::from(data);
+        //let matching_poly_2 = _calculate_matching_polynomial_binary(graph2);
+
+        //assert_eq!(&matching_poly[..=graph_size], matching_poly_2.data());
+    //}
 
     #[test]
     fn raw_polynomial_calculation_hard() {
@@ -171,10 +192,11 @@ mod tests {
                                          1.0, 1.0, 1.0, 1.0, 
                                          1.0, 1.0, 1.0, 1.0];
 
-        let true_weights_2: [f32; 16] = [1.0, 1.0, 2.0, 1.0, 
-                                         1.0, 1.0, 1.0, 2.0,
-                                         2.0, 1.0, 1.0, 2.0, 
-                                         1.0, 2.0, 2.0, 1.0];
+        let true_weights_2: [f32; 16] = [1.0, 1.0, -2.0, 1.0, 
+                                         1.0, 1.0, 1.0, -2.0,
+                                         -2.0, 1.0, 1.0, -2.0, 
+                                         1.0, -2.0, -2.0, 1.0];
+
         let mut weights_1: [f32; 4096] = [0.0; 4096];
         let mut weights_2: [f32; 4096] = [0.0; 4096];
         weights_1[..16].copy_from_slice(&true_weights_1);
@@ -197,4 +219,35 @@ mod tests {
         assert_eq!(weighted_matching_polynomial_1.data(), &[1.0, 0.0, 3.0, 0.0, 1.0]);
         assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
     }
+
+    #[test]
+    fn poly2herme_test() {
+        let poly = Polynomial::new(vec![0.0, 1.0, 2.0, 3.0]);
+        let herm = poly2herme(&poly);
+        assert_eq!(herm.data(), &[2.0, 10.0, 2.0, 3.0]);
+    }
+    #[test]
+    fn herme2poly_test() {
+        let poly = Polynomial::new(vec![2.0, 10.0, 2.0, 3.0]);
+        let herm = herme2poly(&poly);
+        assert_eq!(herm.data(), &[0.0, 1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn hermadd_test() {
+        let poly_1 = Polynomial::new(vec![1.0, 2.0, 3.0]);
+        let poly_2 = Polynomial::new(vec![1.0, 2.0, 3.0, 4.0]);
+        let result = hermadd(&poly_1, &poly_2);
+        println!("result: {:?}", result.data());
+        assert_eq!(result.data(), &[2.0, 4.0, 6.0, 4.0]);
+    }
+    #[test]
+    fn hermemul_test() {
+        let poly_1 = Polynomial::new(vec![1.0, 2.0, 3.0]);
+        let mul = hermemulx(&poly_1);
+        let test_data = vec![2.0, 7.0, 2.0, 3.0];
+        println!("mul: {:?}", mul.data());
+        assert_eq!(mul.data(), &test_data);
+    }
 }
+

@@ -3,6 +3,7 @@ use std::mem::size_of;
 use polynomial::Polynomial;
 use std::mem;
 use std::cmp::PartialEq;
+use crate::polynomials::herme2poly;
 
 const MAX_NODES: usize = mem::size_of::<usize>()*8;
 
@@ -32,6 +33,22 @@ impl Graph {
     }
     pub fn data(self) -> [usize; size_of::<usize>()*8] {
         self.data
+    }
+    pub fn density(self) -> f32 {
+
+    }
+    pub fn complement(self) -> Graph {
+        let complement_data = self
+            .data
+            .iter()
+            .map(|x| x ^ )
+            .collect::<Vec<usize>>();
+
+        Graph { 
+            data: complement_data.as_slice().to_owned(), 
+            initial_graph_size: self.initial_graph_size,
+        }
+
     }
     pub fn remove_node(&mut self, node: usize, graph_size : usize) {
         // remove node from adjacency list
@@ -236,9 +253,19 @@ pub fn _calculate_matching_polynomial_binary(graph: Graph) -> Polynomial<u64> {
         //println!("graph {:?}", &graph.data);
         //println!("graph_prime {:?}", &graph_prime.data);
         //println!("graph_prime_prime {:?}", &graph_prime_prime.data);
-
-        let poly_1 = _calculate_matching_polynomial_binary(graph_prime);
-        let poly_2 = _calculate_matching_polynomial_binary(graph_prime_prime);
+        let poly_1;
+        let poly_2;
+        if graph_prime.density() > 0.5 {
+            let poly_1 = herme2poly(_calculate_matching_polynomial_binary(graph_prime.complement()));
+        } else {
+            let poly_1 = _calculate_matching_polynomial_binary(graph_prime);
+        }
+        if graph_prime_prime.density() > 0.5 {
+            let poly_2 = herme2poly(_calculate_matching_polynomial_binary(graph_prime_prime.complement()));
+        } else {
+            let poly_2 = _calculate_matching_polynomial_binary(graph_prime_prime);
+        }
+        //let poly_2 = _calculate_matching_polynomial_binary(graph_prime_prime);
         let poly = poly_1 + poly_2;
         return poly
     }
