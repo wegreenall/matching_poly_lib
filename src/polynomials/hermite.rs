@@ -67,32 +67,39 @@ pub fn poly2herme(p: &Polynomial<f32>) -> Polynomial<f32> {
 
     let mut res = Polynomial::new(vec![data[deg]]);
     println!("initial res: {:?}", res);
-    let range = (o..deg).rev();
+    let range = (0..deg).rev();
     for index in range {
         res = hermadd(&hermemulx(&res), &Polynomial::new(vec![data[index]]));
     }
     res
 }
 
-//pub fn herme2poly(p: &Polynomial<f32>) -> Polynomial<f32> {
-    //let data = p.data();
-    //let n = data.len();
-    //let mut c0;
-    //let mut c1;
-    //let range = (1..n-1).rev(); 
-    //if n == 1 || n == 2 {
-        //return Polynomial::from(p.to_owned());
-    //} else {
-        //let c0 = data[n-2];
-        //let c1 = data[n-1];
-        //for i in range {
-            //let tmp = c0;
-            //c0 = Polynomial::new(vec![data[i-2]]) - Polynomial::new(c1 * (i-1));
-            //c1 = tmp + polymulx(Polynomial::new(c1));
-        //}
-    //};
-//}
+pub fn herme2poly(p: &Polynomial<f32>) -> Polynomial<f32> {
+    let data = p.data();
+    let n = data.len();
+    let c0: f32 = data[n - 2];
+    let c1: f32 = data[n - 1];
+    let range = (2..n).rev(); // it's inclusive though...
+    let mut p0  = Polynomial::new(vec![c0]);
+    let mut p1  = Polynomial::new(vec![c1]);
+    // at n = 1 or n = 2, the polynomial is already in standard basis
+    if n == 1 || n == 2 {
+        return Polynomial::from(p.to_owned());
+    } else {
+        for i in range {
+            //println!("i: {:?} p0 at beginning: {:?}; p1 at beginning: {:?}", i, p0, p1);
+            let tmp = p0; // tmp is a number
+            p0 = Polynomial::new(vec![data[i-2]]) - &p1 * Polynomial::new(vec![(i-1) as f32]);
+            p1 = tmp + polymulx(&p1);
+            //println!("i: {:?} p0 at end: {:?}; p1 at end: {:?}", i, p0, p1);
+            //println!("\n");
+        }
+    };
+    //println!("p0: {:?}; p1:  {:?}", p0, p1);
+    hermadd(&p0, &polymulx(&p1))
+}
 
+/// Multiply a polynomial by x
 fn polymulx(p: &Polynomial<f32>) -> Polynomial<f32> {
     p * Polynomial::new(vec![0.0, 1.0])
 }

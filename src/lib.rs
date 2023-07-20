@@ -6,11 +6,12 @@ pub mod petgraph;
 pub mod binary_graph_matching;
 pub mod polynomials;
 
-pub use graph_matching::{Graph, calculate_matching_polynomial_pointer, _calculate_matching_polynomial_binary};
+pub use graph_matching::{Graph,  _calculate_matching_polynomial_binary, calculate_matching_polynomial_pointer};
 use polynomial::Polynomial;
-use polynomials::{poly2herme, herme2poly, hermadd, hermemulx};
+use polynomials::{poly2herme,  hermadd, hermemulx , herme2poly};
+    //herme2poly,};
 
-//use matching::calculate_matching_polynomial_pointer;
+//use graph_matching::calculate_matching_polynomial_pointer;
 //use matching::{
     //get_deck, get_matching_polies_stable_graph,
 //};
@@ -226,10 +227,12 @@ mod tests {
         let herm = poly2herme(&poly);
         assert_eq!(herm.data(), &[2.0, 10.0, 2.0, 3.0]);
     }
+
     #[test]
     fn herme2poly_test() {
         let poly = Polynomial::new(vec![2.0, 10.0, 2.0, 3.0]);
         let herm = herme2poly(&poly);
+        println!("{:?}", herm);
         assert_eq!(herm.data(), &[0.0, 1.0, 2.0, 3.0]);
     }
 
@@ -241,6 +244,7 @@ mod tests {
         println!("result: {:?}", result.data());
         assert_eq!(result.data(), &[2.0, 4.0, 6.0, 4.0]);
     }
+
     #[test]
     fn hermemul_test() {
         let poly_1 = Polynomial::new(vec![1.0, 2.0, 3.0]);
