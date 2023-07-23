@@ -251,15 +251,51 @@ mod tests {
         // one weight
         let address = 0b1110; // lllr
         let weight = weight_from_address(address, &weights_1, 4);
-        println!("true weight for address {:b}: {}", address, weight);
         assert_eq!(weight, 4.0);
-        println!("\n");
 
         // two weights
         let address = 0b100; // lllr
         let weight = weight_from_address(address, &weights_1, 4);
-        println!("true weight for address {:b}: {}", address, weight);
         assert_eq!(weight, 6.0);
+
+        let address = 0b110;
+        let weight = weight_from_address(address, &weights_1, 4);
+        assert_eq!(weight, 2.0);
     }
+
+    #[test]
+    fn weight_from_address_test_2() {
+        // set up the basic, initial data
+        let true_weights_1: [f32; 16] = [0.0, 0.0, 3.0, 0.0, 
+                                         0.0, 0.0, 0.0, 2.0,
+                                         3.0, 0.0, 0.0, 4.0, 
+                                         0.0, 2.0, 4.0, 0.0];
+        let mut weights_1: [f32; 4096] = [0.0; 4096];
+        //let data = [
+            //10, 5, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            //0, 0, 0, 0, 0, 0, 0, 0, 0,
+        //];
+        // set up the weights for the graph
+        weights_1[..16].copy_from_slice(&true_weights_1);
+        //let weighted_graph_1 = WeightedGraph::from(data, weights_1); // the fully connected graph
+        //let weighted_matching_polynomial = _calculate_weighted_matching_polynomial_binary(weighted_graph_1);
+        //assert_eq!(weighted_matching_polynomial.data(), &[12.0, 0.0, 5.0, 0.0, 1.0]);
+
+        // one weight
+        let address = 0b1110; // lllr
+        let weight = weight_from_address(address, &weights_1, 4);
+        assert_eq!(weight, 4.0);
+
+        // two weights
+        let address = 0b100; // lrr
+        let weight = weight_from_address(address, &weights_1, 4);
+        assert_eq!(weight, 6.0);
+
+        let address = 0b110; // llr
+        let weight = weight_from_address(address, &weights_1, 4);
+        assert_eq!(weight, 2.0);
+    }
+
 
 }
