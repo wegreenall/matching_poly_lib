@@ -1,36 +1,47 @@
 //#![allow(dead_code, unused_variables)]
 use core::fmt;
-use std::mem::size_of;
 use polynomial::Polynomial;
 use std::mem;
 use std::cmp::PartialEq;
 
+use crate::traits::Graph;
 
 const MAX_NODES: usize = mem::size_of::<usize>()*8;
 /// We represent graphs as a seequence of integers in which each bit represents
 /// an edge. The first bit however represents whether that node is contained
 /// in the graph; removing a node implies zero-ing this bit.
 #[derive(Debug, Clone, Copy)]
-pub struct Graph {
-    data: [usize; size_of::<usize>()*8],
+pub struct BinaryGraph {
+    data: [usize; MAX_NODES],
+    initial_graph_size: usize,
 }
 
-impl Graph {
-   pub const fn new() -> Graph {
-        let blank_data = [0; size_of::<usize>()*8];
-         Graph {
+impl BinaryGraph {
+   pub const fn new() -> BinaryGraph {
+        let blank_data = [0; MAX_NODES];
+
+         BinaryGraph {
                data: blank_data,
+               initial_graph_size: 0,
          }
    }
-   pub fn from(data: [usize; size_of::<usize>()*8]) -> Graph {
-        Graph {
+
+   pub fn from(data: [usize; MAX_NODES]) -> BinaryGraph {
+        BinaryGraph {
             data,
+            initial_graph_size: data
+                .iter()
+                .filter(|x| x> &&(0 as usize))
+                .count(),
         }
     }
-    pub fn data(self) -> [usize; size_of::<usize>()*8] {
+    fn data(self) -> [usize; MAX_NODES] {
         self.data
     }
-    pub fn remove_node(&mut self, node: usize, graph_size : usize) {
+}
+
+impl Graph for BinaryGraph {
+    fn remove_node(&mut self, node: usize, graph_size : usize) {
         // remove node from adjacency list
         self.data[node] = 0;
 
@@ -40,7 +51,7 @@ impl Graph {
             .for_each(|x| *x &= !(1<<graph_size.saturating_sub(node+1)));
     }
 
-    pub fn remove_edge(&mut self, node1: usize, node2: usize, graph_size: usize) {
+    fn remove_edge(&mut self, node1: usize, node2: usize, graph_size: usize) {
         // remove edge from adjacency list
         let shift = graph_size.saturating_sub(node2);
          
@@ -48,7 +59,7 @@ impl Graph {
         self.data[node1] &= (!(1 << (shift-1))) as usize; 
     }
 
-    pub fn edgeless_node_count(&self) -> usize {
+    fn edgeless_node_count(&self) -> usize {
         // count the number of nodes in the graph
         // To count the number of nodes in th graph,
         // count the number of the bits in the graph
@@ -60,22 +71,29 @@ impl Graph {
             .count_ones() as usize
     }
 
-    pub fn graph_size(&self) -> usize{
+    fn graph_size(&self) -> usize{
         self.data
             .iter()
             .filter(|x| x> &&(0 as usize)) // i.e. get the ones that are valid
             .count()
     }
 
+    fn edge_count(&self) -> usize {
+        self.data
+            .iter()
+            .map(|x| x.count_ones() as usize)
+            .sum::<usize>()
+    }
+
     /// checks whether the graph is edgeless, i.e. if each of the elements
     /// is a power of two or 0
-    pub fn edgeless(&self) -> bool {
+    fn edgeless(&self) -> bool {
         self.data
             .iter()
             .all(|x| x == &(0 as usize) || x.is_power_of_two())
     } 
 
-    pub fn get_graph_primes(self) -> (Graph, Graph) {
+    fn get_graph_primes(self) -> (Box<BinaryGraph>, Box<BinaryGraph>) {
         let mut new_graph = self; // Should copy
         let mut new_graph2 = self; // Should copy
 
@@ -88,9 +106,11 @@ impl Graph {
         // G'' = G - {v, w} where {w, v} are the nodes connected to e
         new_graph2.remove_node(start_node, graph_size);
         new_graph2.remove_node(end_node, graph_size);
-        (new_graph, new_graph2)
+        (Box::new(new_graph), Box::new(new_graph2))
     }
 
+    fn initial_graph_size(&self) -> usize{
+        self.initial_graph_size   }
     /// To step through and calculate the matching polynomial, we use the edge
     /// remove recurrence:
     /// m(g, x) = m(G', x) - m(G'', x)
@@ -98,13 +118,13 @@ impl Graph {
     /// G' = G - e
     /// G'' = G - {v, w} where {w, v} are the nodes
     /// at the ends of e.
-    ///
+       
     /// Thus, we get get the "relevant edge e" which is the first edge in the
     /// first remaining node. Since the nodes are ordered in decreasing order 
     /// of degree, dropping the first edge we find drops the most edges from 
     /// the graph, since the nodes at its ends will be the "most connected" 
     /// nodes.
-    pub fn get_relevant_edge(&self) -> (usize, usize, usize) {
+    fn get_relevant_edge(&self) -> (usize, usize, usize) {
         // since the nodes are ordered in INCREASING order of degree, we can
         // just drop the last(right-most in the binary representation)
         // edge we find, on the first still-relevant node.
@@ -115,6 +135,7 @@ impl Graph {
         // edge for the first relevant node.
         let drop_first_connected_edge: bool = false;
 
+        // the first node
         let starting_node = self.data
             .iter()
             .enumerate()
@@ -170,6 +191,14 @@ impl Graph {
         }
         (starting_node, end_node, graph_size)
     }
+
+    /// the density is the ratio between the number of  edges in the graph
+    /// and the number of edges it could ostensibly contain
+    fn density(&self) -> f32 {
+        let edge_count = self.edge_count();
+        let graph_size = self.graph_size();
+        return edge_count as f32 / (graph_size * (graph_size - 1)) as f32;
+    }
 }
 
 /// Equality of the graphs will have be done based on if they are isomorphic to 
@@ -178,13 +207,13 @@ impl Graph {
 /// problem. We can then use the fact that the graphs are ordered in decreasing
 /// order of degree to simplify the problem further.
 /// 
-impl PartialEq for Graph {
-    fn eq(&self, other: &Graph) -> bool {
+impl PartialEq for BinaryGraph {
+    fn eq(&self, other: &BinaryGraph) -> bool {
         self.data == other.data
     }
 }
 
-impl std::fmt::Display for Graph {
+impl std::fmt::Display for BinaryGraph {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut result = write!(f, "\n");
         for x in self.data.iter() {
@@ -195,8 +224,8 @@ impl std::fmt::Display for Graph {
 }
 
 
-pub fn get_deck(graph: &Graph) -> Vec<Graph>{
-    let mut deck = Vec::<Graph>::new();
+pub fn get_deck(graph: &BinaryGraph) -> Vec<BinaryGraph>{
+    let mut deck = Vec::<BinaryGraph>::new();
     let graph_size = graph.graph_size();
     for i in 0..graph_size {
         //println!("current graph: {}", current_graph);
@@ -207,7 +236,7 @@ pub fn get_deck(graph: &Graph) -> Vec<Graph>{
     deck
 }
 
-pub fn _calculate_matching_polynomial_binary(graph: Graph) -> Polynomial<u64> {
+pub fn _calculate_matching_polynomial_binary(graph: Box<BinaryGraph>) -> Polynomial<u64> {
     // the base case for the process is that the graph is edgeless.
     // This means that, of the remaining nodes, each of their integer
     // representations is a power of two.
@@ -224,11 +253,7 @@ pub fn _calculate_matching_polynomial_binary(graph: Graph) -> Polynomial<u64> {
         // get G' and G''
         // G' = G - an edge
         // G'' = G - the nodes connected to the edge removed to get G'
-        //println!("graph {:?}", &graph.data);
         let (graph_prime, graph_prime_prime) = graph.get_graph_primes();
-        //println!("graph {:?}", &graph.data);
-        //println!("graph_prime {:?}", &graph_prime.data);
-        //println!("graph_prime_prime {:?}", &graph_prime_prime.data);
 
         let poly_1 = _calculate_matching_polynomial_binary(graph_prime);
         let poly_2 = _calculate_matching_polynomial_binary(graph_prime_prime);

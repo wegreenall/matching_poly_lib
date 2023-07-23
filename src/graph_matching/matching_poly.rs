@@ -1,27 +1,30 @@
 #[allow(unreachable_code)]
-use crate::graph_matching::Graph;
+use polynomial::Polynomial;
+//use crate::graph_matching::BinaryGraph;
+use crate::binary_graph_matching::BinaryGraph;
 use std::mem::size_of;
-
+use crate::polynomials::{herme2poly, poly2herme};
+use crate::traits::Graph;
 
 /// This file contains functions that are used to calculate the matching
 /// polynomials for graphs. This method will use static memory for the
 /// POLYNOMIAL as opposed to the GRAPH. Since the computation graph for the
 /// polynomial requires no reads until returning to the caller, and the write
 /// operations are done in any order (since we calculate the signless matching
-r// polynomial), we can avoid large numbers of allocations by using static
-/// memory.
+/// polynomial), we can avoid large numbers of allocations by using static memory.
+     
 const POLY_SIZE: usize = size_of::<usize>()*8;
-//static mut POLY: [u64; size_of::<usize>()*8] = [0; size_of::<usize>()*8]; 
-pub fn calculate_matching_polynomial_pointer(graph: Graph) -> [u64; size_of::<usize>()*8] {
+
+pub fn calculate_matching_polynomial_pointer(graph: BinaryGraph) -> [u64; size_of::<usize>()*8] {
    let poly: &mut [u64; POLY_SIZE] = &mut [0; POLY_SIZE];
-   unsafe {
+   //unsafe {
        // clear the memory
        for i in 0..size_of::<usize>()*8 {
            poly[i] = 0;
        }
-       _calculate_matching_polynomial_static(graph, poly);
+       _calculate_matching_polynomial_static(Box::new(graph), poly);
        return *poly
-   }
+   //}
 }
 
 /*
@@ -39,7 +42,9 @@ pub fn calculate_matching_polynomial_pointer(graph: Graph) -> [u64; size_of::<us
  *  get two graphs to be comparable
  *  */
 
-unsafe fn _calculate_matching_polynomial_static(graph: Graph, poly: &mut [u64; POLY_SIZE]) {
+/// the following function assumes that the graph is to have its polynomial calculated
+/// in the standard basis.
+fn _calculate_matching_polynomial_static(graph: Box<BinaryGraph>, poly: &mut [u64; POLY_SIZE]) {
     if graph.edgeless() {
         let node_count = graph.edgeless_node_count();
         poly[node_count] += 1;
@@ -50,6 +55,50 @@ unsafe fn _calculate_matching_polynomial_static(graph: Graph, poly: &mut [u64; P
     }
 }
 
-//fn _get_graph_primes(graph: Graph) -> (Graph, Graph) {
-    
-//}
+/// the following function, aimed at being a drop-in replacement for the one above,
+/// assumes that the graph is to have its polynomial calculated adaptively as the 
+/// density of the relevant subraph changes over the course of the algorithm.
+fn _calculate_matching_polynomial_static_adaptive(graph: Box<BinaryGraph>, poly: &mut [u64; POLY_SIZE], complement: bool) {
+    if graph.edgeless() {
+        let node_count = graph.edgeless_node_count();
+        if complement {
+            // run the update as if in the Hermite basis
+            poly[node_count] += 1;
+        } else {
+            // run the update as if in the standard basis
+            poly[node_count] += 1;
+        }
+        poly[node_count] += 1;
+    } else {
+        let (graph_prime, graph_prime_prime) = graph.get_graph_primes();
+
+        if graph_prime_prime.density() >= 0.5 {
+            let complement = true;
+            _calculate_matching_polynomial_static_adaptive(graph_prime_prime, poly, complement);
+        } else {
+            _calculate_matching_polynomial_static_adaptive(graph_prime, poly, complement); // put this at the end as I think
+        }
+    }
+}
+
+//pub fn _calculate_matching_polynomial_binary(graph: BinaryGraph) -> Polynomial<u64> {
+    //// the base case for the process is that the graph is edgeless.
+    //// This means that, of the remaining nodes, each of their integer
+    //// representations is a power of two.
+    //if graph.edgeless() { // i.e. we're at the base case.
+        //// produce a sequence of coefficients the same length as the number of vertices
+        //let mut coeffics = vec![0; graph.edgeless_node_count()];
+        //coeffics.push(1);
+        //let poly = Polynomial::new(coeffics);
+        //return poly
+    //} else {
+        //// G' = G - {an edge e}
+        //// G'' = G - {the nodes connected to the edge e}
+        //let (graph_prime, graph_prime_prime) = graph.get_graph_primes();
+
+        //let poly_1 = _calculate_matching_polynomial_binary(graph_prime);
+        //let poly_2 = _calculate_matching_polynomial_binary(graph_prime_prime);
+        //let poly = poly_1 + poly_2;
+        //return poly
+    //}
+//} 

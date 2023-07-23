@@ -1,4 +1,5 @@
-use crate::graph_matching::Graph;
+use crate::binary_graph_matching::BinaryGraph;
+use crate::traits::Graph;
 use polynomial::Polynomial;
 use std::mem;
 
@@ -6,7 +7,7 @@ const MAX_NODES: usize = mem::size_of::<usize>()*8;
 
 #[derive(Debug, Clone, Copy)]
 pub struct WeightedGraph{
-    pub graph: Graph,
+    pub graph: BinaryGraph,
     pub weights: [f32; MAX_NODES*MAX_NODES],
 }
 
@@ -14,14 +15,14 @@ impl WeightedGraph {
     pub const fn new() -> WeightedGraph {
          let blank_weights = [0.0 as f32; MAX_NODES*MAX_NODES];
          WeightedGraph {
-             graph: Graph::new(),
+             graph: BinaryGraph::new(),
              weights: blank_weights,
          }
    }
 
    pub fn from(data: [usize; mem::size_of::<usize>()*8], weights: [f32; MAX_NODES*MAX_NODES]) -> WeightedGraph {
         WeightedGraph {
-            graph: Graph::from(data),
+            graph: BinaryGraph::from(data),
             weights,
         }
     }
