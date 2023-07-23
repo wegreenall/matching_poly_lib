@@ -1,6 +1,6 @@
 use polynomial::Polynomial;  
-use std::cmp::PartialEq;
-use std::ops::{Mul, Div};
+//use std::cmp::PartialEq;
+//use std::ops::{Mul, Div};
 use std::cmp::min;
 
 // Following the numpy way of doing things, we implement in this file some
