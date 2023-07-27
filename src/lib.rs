@@ -6,17 +6,16 @@ pub mod petgraph;
 pub mod binary_graph_matching;
 pub mod polynomials;
 
-
-pub use graph_matching::calculate_matching_polynomial_pointer;
 use traits::Graph;
 use polynomial::Polynomial;
 use polynomials::{poly2herme,  hermadd, hermemulx , herme2poly};
-pub use binary_graph_matching::{BinaryGraph, _calculate_matching_polynomial_binary};
 use crate::weighted_graph_matching::{WeightedGraph, _calculate_weighted_matching_polynomial_binary, get_weighted_deck, weight_from_address};
 
-use matching_raw_memory::{calculate_matching_polynomial_raw, GraphData, GraphProperties};
+pub use binary_graph_matching::{calculate_matching_polynomial_pointer, calculate_matching_polynomial_pointer_addresses};
+pub use binary_graph_matching::{BinaryGraph, _calculate_matching_polynomial_binary};
+use matching_raw_memory::{calculate_matching_polynomial_raw, GraphProperties};
 
-mod traits;
+pub mod traits;
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -32,7 +31,7 @@ mod tests {
         let graph_size = graph.graph_size();
         let matching_poly = calculate_matching_polynomial_pointer(graph);
         let graph2 = BinaryGraph::from(data); // the fully connected graph
-        let matching_poly_2 = _calculate_matching_polynomial_binary(Box::new(graph2));
+        let matching_poly_2 = _calculate_matching_polynomial_binary(graph2);
 
         assert_eq!(&matching_poly[..=graph_size], matching_poly_2.data());
     }
@@ -49,7 +48,7 @@ mod tests {
         let matching_poly = calculate_matching_polynomial_pointer(graph);
 
         let graph2 = BinaryGraph::from(data); // the fully connected graph
-        let matching_poly_2 = _calculate_matching_polynomial_binary(Box::new(graph2));
+        let matching_poly_2 = _calculate_matching_polynomial_binary(graph2);
 
         assert_eq!(&matching_poly[..=graph_size], matching_poly_2.data());
     }
@@ -66,7 +65,7 @@ mod tests {
         let matching_poly = calculate_matching_polynomial_raw(graph);
 
         let graph2 = BinaryGraph::from(data); // the fully connected graph
-        let matching_poly_2 = _calculate_matching_polynomial_binary(Box::new(graph2));
+        let matching_poly_2 = _calculate_matching_polynomial_binary(graph2);
 
         assert_eq!(&matching_poly[..=graph_size], matching_poly_2.data());
     }
@@ -83,7 +82,7 @@ mod tests {
         let matching_poly = calculate_matching_polynomial_raw(graph);
 
         let graph2 = BinaryGraph::from(data); // the fully connected graph
-        let matching_poly_2 = _calculate_matching_polynomial_binary(Box::new(graph2));
+        let matching_poly_2 = _calculate_matching_polynomial_binary(graph2);
 
         assert_eq!(&matching_poly[..=graph_size], matching_poly_2.data());
     }
@@ -117,8 +116,8 @@ mod tests {
                                                         //
         let weighted_matching_polynomial_1 = _calculate_weighted_matching_polynomial_binary(weighted_graph_1);
         let weighted_matching_polynomial_2 = _calculate_weighted_matching_polynomial_binary(weighted_graph_2);
-        let matching_polynomial_1 = _calculate_matching_polynomial_binary(Box::new(graph_1));
-        let matching_polynomial_2 = _calculate_matching_polynomial_binary(Box::new(graph_2));
+        let matching_polynomial_1 = _calculate_matching_polynomial_binary(graph_1);
+        let matching_polynomial_2 = _calculate_matching_polynomial_binary(graph_2);
         assert_eq!(matching_polynomial_1.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(matching_polynomial_2.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(weighted_matching_polynomial_1.data(), &[1.0, 0.0, 3.0, 0.0, 1.0]);
@@ -150,8 +149,8 @@ mod tests {
                                                         //
         let weighted_matching_polynomial_1 = _calculate_weighted_matching_polynomial_binary(weighted_graph_1);
         let weighted_matching_polynomial_2 = _calculate_weighted_matching_polynomial_binary(weighted_graph_2);
-        let matching_polynomial_1 = _calculate_matching_polynomial_binary(Box::new(graph_1));
-        let matching_polynomial_2 = _calculate_matching_polynomial_binary(Box::new(graph_2));
+        let matching_polynomial_1 = _calculate_matching_polynomial_binary(graph_1);
+        let matching_polynomial_2 = _calculate_matching_polynomial_binary(graph_2);
         println!("matching polynomial 2: {:?}", weighted_matching_polynomial_2.data());          
         assert_eq!(matching_polynomial_1.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(matching_polynomial_2.data(), &[1, 0, 3, 0, 1]);
@@ -186,8 +185,8 @@ mod tests {
                                                         //
         let weighted_matching_polynomial_1 = _calculate_weighted_matching_polynomial_binary(weighted_graph_1);
         let weighted_matching_polynomial_2 = _calculate_weighted_matching_polynomial_binary(weighted_graph_2);
-        let matching_polynomial_1 = _calculate_matching_polynomial_binary(Box::new(graph_1));
-        let matching_polynomial_2 = _calculate_matching_polynomial_binary(Box::new(graph_2));
+        let matching_polynomial_1 = _calculate_matching_polynomial_binary(graph_1);
+        let matching_polynomial_2 = _calculate_matching_polynomial_binary(graph_2);
 
         println!("weightd matching polynomial 1: {:?}", weighted_matching_polynomial_1.data());          
         println!("weighted matching polynomial 2: {:?}", weighted_matching_polynomial_2.data());          
@@ -198,8 +197,7 @@ mod tests {
         assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
     }
 
-    #[test]
-    fn poly2herme_test() {
+    #[test] fn poly2herme_test() {
         let poly = Polynomial::new(vec![0.0, 1.0, 2.0, 3.0]);
         let herm = poly2herme(&poly);
         assert_eq!(herm.data(), &[2.0, 10.0, 2.0, 3.0]);
@@ -217,7 +215,6 @@ mod tests {
         let poly_1 = Polynomial::new(vec![1.0, 2.0, 3.0]);
         let poly_2 = Polynomial::new(vec![1.0, 2.0, 3.0, 4.0]);
         let result = hermadd(&poly_1, &poly_2);
-        //println!("result: {:?}", result.data());
         assert_eq!(result.data(), &[2.0, 4.0, 6.0, 4.0]);
     }
 
@@ -226,7 +223,6 @@ mod tests {
         let poly_1 = Polynomial::new(vec![1.0, 2.0, 3.0]);
         let mul = hermemulx(&poly_1);
         let test_data = vec![2.0, 7.0, 2.0, 3.0];
-        println!("mul: {:?}", mul.data());
         assert_eq!(mul.data(), &test_data);
     }
     #[test]
@@ -271,11 +267,7 @@ mod tests {
                                          3.0, 0.0, 0.0, 4.0, 
                                          0.0, 2.0, 4.0, 0.0];
         let mut weights_1: [f32; 4096] = [0.0; 4096];
-        //let data = [
-            //10, 5, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            //0, 0, 0, 0, 0, 0, 0, 0, 0,
-        //];
+
         // set up the weights for the graph
         weights_1[..16].copy_from_slice(&true_weights_1);
         //let weighted_graph_1 = WeightedGraph::from(data, weights_1); // the fully connected graph
@@ -297,5 +289,106 @@ mod tests {
         assert_eq!(weight, 2.0);
     }
 
+    #[test]
+    fn get_addresses() {
+        let data = [
+            10, 5, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let true_weights_1: [f32; 16] = [0.0, 0.0, 3.0, 0.0, 
+                                         0.0, 0.0, 0.0, 2.0,
+                                         3.0, 0.0, 0.0, 4.0, 
+                                         0.0, 2.0, 4.0, 0.0];
+        let mut weights_1: [f32; 4096] = [0.0; 4096];
+        weights_1[..16].copy_from_slice(&true_weights_1);
+
+        let graph = BinaryGraph::from(data);
+        let mut addresses: Vec<usize>; 
+        let (_, address_vec) = calculate_matching_polynomial_pointer_addresses(graph);
+        addresses = address_vec;
+        addresses.sort();
+        let mut true_addresses = vec![0b1111, 0b1110, 0b110, 0b101, 0b0100];
+        true_addresses.sort();
+        assert_eq!(addresses, true_addresses);
+    }
+
+    #[test]
+    fn get_polynomial_with_addresses() {
+        let true_weights_1: [f32; 16] = [0.0, 0.0, 3.0, 0.0, 
+                                         0.0, 0.0, 0.0, 2.0,
+                                         3.0, 0.0, 0.0, 4.0, 
+                                         0.0, 2.0, 4.0, 0.0];
+        let mut weights_1: [f32; 4096] = [0.0; 4096];
+        weights_1[..16].copy_from_slice(&true_weights_1);
+
+        let true_addresses = vec![0b1111, 0b1110, 0b110, 0b101, 0b0100];
+        let mut polynomial_coefficients = vec![1.0, 0.0, 3.0, 0.0, 1.0];
+        true_addresses.iter().for_each(|x| {
+            let address = *x;
+            let weight = weight_from_address(address, &weights_1, 4);
+
+            // get the number of zeroes
+            polynomial_coefficients[4 - 2 * (address.count_zeros() - address.leading_zeros()) as usize] += weight - 1.0;
+        });
+        assert_eq!(vec![6.0, 0.0, 9.0, 0.0, 1.0], polynomial_coefficients);
+    }
+
+    #[test]
+    fn get_polynomial_with_addresses_2() {
+        let data = [
+            0b1101, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let true_weights: [f32; 16] = [0.0, 2.0, 0.0, 2.0, 
+                                       2.0, 0.0, 2.0, 0.0,
+                                       0.0, 2.0, 0.0, 2.0, 
+                                       2.0, 0.0, 2.0, 0.0];
+        let mut weights_1: [f32; 4096] = [0.0; 4096];
+        weights_1[..16].copy_from_slice(&true_weights);
+
+        let graph = BinaryGraph::from(data);
+        let (_, addresses) = calculate_matching_polynomial_pointer_addresses(graph);
+        let mut polynomial_coefficients: Vec<f32> = vec![0.0, 0.0, 0.0, 0.0, 0.0];
+
+        addresses.iter().for_each(|x| {
+            let address = *x;
+            let weight = weight_from_address(address, &weights_1, 4);
+
+            // get the number of zeroes
+            let index = 4 - 2 * (address.count_zeros() - address.leading_zeros()) as usize;
+            polynomial_coefficients[index] = polynomial_coefficients[index] as f32 + weight;
+        });
+        assert_eq!(vec![8.0, 0.0, 8.0, 0.0, 1.0], polynomial_coefficients);
+    }
+    #[test]
+    fn complement() {
+        // fully_connected data
+        let fc_data = [
+            0b11111, 0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0
+        ];
+        let graph = BinaryGraph::from(fc_data);
+
+        let complement = graph.complement();
+        assert_eq!([0b10000, 0b1000, 0b100, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0], complement.data());
+
+        // now, standard data
+        let standard_data = [
+            0b11101, 0b1001, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let graph_2 = BinaryGraph::from(standard_data);
+        let complement_2 = graph_2.complement();
+        println!("{:?}", complement_2.data());
+        assert_eq!([0b10010, 0b1110, 0b101, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0], complement_2.data());
+    }
 
 }

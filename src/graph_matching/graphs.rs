@@ -1,9 +1,7 @@
 use core::fmt;
 use std::mem::size_of;
-use polynomial::Polynomial;
 use std::mem;
 use std::cmp::PartialEq;
-//use crate::traits::Graph;
 
 const MAX_NODES: usize = mem::size_of::<usize>()*8;
 
@@ -206,17 +204,3 @@ impl std::fmt::Display for Graph {
         result
     }
 }
-
-pub fn get_deck(graph: &Graph) -> Vec<Graph>{
-    let mut deck = Vec::<Graph>::new();
-    let graph_size = graph.graph_size();
-    for i in 0..graph_size {
-        //println!("current graph: {}", current_graph);
-        let mut current_graph = graph.clone();
-        current_graph.remove_node(i, graph_size); 
-        deck.push(current_graph.clone());
-    }
-    deck
-}
-
-

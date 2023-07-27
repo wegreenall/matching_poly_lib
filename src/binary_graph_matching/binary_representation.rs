@@ -1,9 +1,7 @@
 //#![allow(dead_code, unused_variables)]
 use core::fmt;
-use polynomial::Polynomial;
 use std::mem;
 use std::cmp::PartialEq;
-
 use crate::traits::Graph;
 
 const MAX_NODES: usize = mem::size_of::<usize>()*8;
@@ -35,7 +33,7 @@ impl BinaryGraph {
                 .count(),
         }
     }
-    fn data(self) -> [usize; MAX_NODES] {
+    pub fn data(self) -> [usize; MAX_NODES] {
         self.data
     }
 }
@@ -74,7 +72,7 @@ impl Graph for BinaryGraph {
     fn graph_size(&self) -> usize{
         self.data
             .iter()
-            .filter(|x| x> &&(0 as usize)) // i.e. get the ones that are valid
+            .filter(|x| x > &&(0 as usize)) // i.e. get the ones that are valid
             .count()
     }
 
@@ -93,7 +91,7 @@ impl Graph for BinaryGraph {
             .all(|x| x == &(0 as usize) || x.is_power_of_two())
     } 
 
-    fn get_graph_primes(self) -> (Box<BinaryGraph>, Box<BinaryGraph>) {
+    fn get_graph_primes(self) -> (BinaryGraph, BinaryGraph) {
         let mut new_graph = self; // Should copy
         let mut new_graph2 = self; // Should copy
 
@@ -106,7 +104,7 @@ impl Graph for BinaryGraph {
         // G'' = G - {v, w} where {w, v} are the nodes connected to e
         new_graph2.remove_node(start_node, graph_size);
         new_graph2.remove_node(end_node, graph_size);
-        (Box::new(new_graph), Box::new(new_graph2))
+        (new_graph, new_graph2)
     }
 
     fn initial_graph_size(&self) -> usize{
@@ -199,6 +197,26 @@ impl Graph for BinaryGraph {
         let graph_size = self.graph_size();
         return edge_count as f32 / (graph_size * (graph_size - 1)) as f32;
     }
+
+    fn complement(&self) -> Self {
+        let mut new_data: [usize; MAX_NODES] = self.data.clone();
+        let data_update = new_data
+            .iter()
+            .take(self.initial_graph_size()) // limit to the first N nodes
+            .filter(|x| x > &&(0 as usize))// get the non-zero ones
+            .map(|x| !(x)&(x.next_power_of_two() - 1))
+            .enumerate() 
+            .map(|(i, x)| x + (1 << (self.initial_graph_size - i-1)))
+            .collect::<Vec<usize>>();
+
+        new_data[..self.initial_graph_size()].copy_from_slice(&data_update);
+
+        BinaryGraph {
+            data: new_data,
+            initial_graph_size: self.initial_graph_size,
+        }
+    }
+    
 }
 
 /// Equality of the graphs will have be done based on if they are isomorphic to 
@@ -222,42 +240,3 @@ impl std::fmt::Display for BinaryGraph {
         result
     }
 }
-
-
-pub fn get_deck(graph: &BinaryGraph) -> Vec<BinaryGraph>{
-    let mut deck = Vec::<BinaryGraph>::new();
-    let graph_size = graph.graph_size();
-    for i in 0..graph_size {
-        //println!("current graph: {}", current_graph);
-        let mut current_graph = graph.clone();
-        current_graph.remove_node(i, graph_size); 
-        deck.push(current_graph.clone());
-    }
-    deck
-}
-
-pub fn _calculate_matching_polynomial_binary(graph: Box<BinaryGraph>) -> Polynomial<u64> {
-    // the base case for the process is that the graph is edgeless.
-    // This means that, of the remaining nodes, each of their integer
-    // representations is a power of two.
-    if graph.edgeless() { // i.e. we're at the base case.
-        // produce a sequence of coefficients the same length as the number of vertices
-        //println!("Hit edgeless graph! with {} nodes", graph.edgeless_node_count());
-        let mut coeffics = vec![0; graph.edgeless_node_count()];
-        coeffics.push(1);
-        let poly = Polynomial::new(coeffics);
-        //println!("Polynomial: {:?}", poly);
-        //println!("graph {:?}", graph.data);
-        return poly
-    } else {
-        // get G' and G''
-        // G' = G - an edge
-        // G'' = G - the nodes connected to the edge removed to get G'
-        let (graph_prime, graph_prime_prime) = graph.get_graph_primes();
-
-        let poly_1 = _calculate_matching_polynomial_binary(graph_prime);
-        let poly_2 = _calculate_matching_polynomial_binary(graph_prime_prime);
-        let poly = poly_1 + poly_2;
-        return poly
-    }
-} 

@@ -1,2 +1,2 @@
 mod graph;
-pub use graph::Graph;
+pub use graph::{Graph, get_deck};
