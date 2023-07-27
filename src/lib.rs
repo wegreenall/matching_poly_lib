@@ -385,10 +385,30 @@ mod tests {
         ];
         let graph_2 = BinaryGraph::from(standard_data);
         let complement_2 = graph_2.complement();
-        println!("{:?}", complement_2.data());
+        //println!("{:?}", complement_2.data());
         assert_eq!([0b10010, 0b1110, 0b101, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0], complement_2.data());
+
+        // now, standard data, but with a missing node or 2
+        let standard_data_missing = [
+            0b11001, 0b1001, 0, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let graph_3 = BinaryGraph::from_graph_subset(standard_data_missing, 5);
+        // print the graph
+        for element in graph_3.data().iter().take(5) {
+            println!("element {:b}", element);
+        }
+        // print the complement
+        let complement_3 = graph_3.complement();
+        for element in complement_3.data().iter().take(5) {
+            println!("element {:b}", element);
+        }
+        assert_eq!([0b10110, 0b1110, 0, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0], complement_3.data());
     }
 
 }

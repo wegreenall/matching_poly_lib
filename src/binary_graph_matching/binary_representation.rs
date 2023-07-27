@@ -33,6 +33,13 @@ impl BinaryGraph {
                 .count(),
         }
     }
+    pub fn from_graph_subset(data: [usize; MAX_NODES], initial_graph_size: usize) -> BinaryGraph {
+        BinaryGraph {
+            data,
+            initial_graph_size,
+        }
+    }
+
     pub fn data(self) -> [usize; MAX_NODES] {
         self.data
     }
@@ -47,6 +54,7 @@ impl Graph for BinaryGraph {
         self.data
             .iter_mut()
             .for_each(|x| *x &= !(1<<graph_size.saturating_sub(node+1)));
+        println!("Node Removed! data: {:?}", self.data);
     }
 
     fn remove_edge(&mut self, node1: usize, node2: usize, graph_size: usize) {
@@ -143,6 +151,9 @@ impl Graph for BinaryGraph {
             .unwrap()
             .0;
 
+        let starting_node_data = self.data[starting_node];
+
+
         // the first relevant node is a number like: (1  0  0  1  1  0  1)
         // the next one would be e.g.:               (0  1  1  0  1  1  0) 
         // i.e. 1 on the diagonal.
@@ -150,16 +161,15 @@ impl Graph for BinaryGraph {
         // graph, is then the node minus the 1 on the diagonal.
         // Later, we will calculate:
         //              node_data - (1<<node_index)
-        let starting_node_data = self.data[starting_node];
-        
-        // now we have the relevant starting node, we can calculate the edge to drop
-        // by finding the LAST bit that is set to 1. First, however, we need to
-        // calculate the offset due to non-usize sized grpahs.
+
+        // now we have the relevant starting node, we can calculate the edge to
+        // drop by finding the LAST bit that is set to 1. First, however, we
+        // need to calculate the offset due to non-usize sized grpahs.
                                                                                 
-        //The first relevant node has some leading zeros up to its relevant diagonal,
-        //a 1, and then a set of leading zeros up to the first edge.
-        // Comparison point: number of zeros from start of adjacency until the graph information
-        // starts.
+        // The first relevant node has some leading zeros up to its relevant
+        // diagonal, a 1, and then a set of leading zeros up to the first edge.
+        // Comparison point: number of zeros from start of adjacency until the
+        // graph information starts.
         let comparison_point = starting_node_data.leading_zeros() as usize - starting_node;
         let graph_size = MAX_NODES.saturating_sub(comparison_point);
         // clean starting node data: the integer corresponding to the node with its first power of two
@@ -200,13 +210,21 @@ impl Graph for BinaryGraph {
 
     fn complement(&self) -> Self {
         let mut new_data: [usize; MAX_NODES] = self.data.clone();
+
         let data_update = new_data
             .iter()
             .take(self.initial_graph_size()) // limit to the first N nodes
-            .filter(|x| x > &&(0 as usize))// get the non-zero ones
-            .map(|x| !(x)&(x.next_power_of_two() - 1))
             .enumerate() 
-            .map(|(i, x)| x + (1 << (self.initial_graph_size - i-1)))
+            .map(|(i, x)| {
+                if !(x == &(0 as usize)) {
+                 let mut z = !(x) & (x.next_power_of_two() - 1);
+                 z = z + (1 << (self.initial_graph_size - i - 1));
+                 z
+                } else {
+                    0
+                }
+            }
+            )// get the complement, masking against the size (so we don't make all leading 0s into 1s)
             .collect::<Vec<usize>>();
 
         new_data[..self.initial_graph_size()].copy_from_slice(&data_update);
@@ -216,7 +234,6 @@ impl Graph for BinaryGraph {
             initial_graph_size: self.initial_graph_size,
         }
     }
-    
 }
 
 /// Equality of the graphs will have be done based on if they are isomorphic to 
