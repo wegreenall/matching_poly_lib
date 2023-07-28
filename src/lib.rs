@@ -11,7 +11,7 @@ use polynomial::Polynomial;
 use polynomials::{poly2herme,  hermadd, hermemulx , herme2poly};
 use crate::weighted_graph_matching::{WeightedGraph, _calculate_weighted_matching_polynomial_binary, get_weighted_deck, weight_from_address};
 
-pub use binary_graph_matching::{calculate_matching_polynomial_pointer, calculate_matching_polynomial_pointer_addresses};
+pub use binary_graph_matching::{calculate_matching_polynomial_pointer, calculate_matching_polynomial_pointer_addresses, calculate_matching_polynomial_adaptive};
 pub use binary_graph_matching::{BinaryGraph, _calculate_matching_polynomial_binary};
 use matching_raw_memory::{calculate_matching_polynomial_raw, GraphProperties};
 
@@ -363,7 +363,7 @@ mod tests {
         assert_eq!(vec![8.0, 0.0, 8.0, 0.0, 1.0], polynomial_coefficients);
     }
     #[test]
-    fn complement() {
+    fn complement_fc() {
         // fully_connected data
         let fc_data = [
             0b11111, 0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -376,7 +376,9 @@ mod tests {
         assert_eq!([0b10000, 0b1000, 0b100, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0], complement.data());
-
+    }
+    #[test]
+    fn complement_standard() {
         // now, standard data
         let standard_data = [
             0b11101, 0b1001, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -389,6 +391,9 @@ mod tests {
         assert_eq!([0b10010, 0b1110, 0b101, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0], complement_2.data());
+    }
+    #[test]
+    fn complement_standard_missing() {
 
         // now, standard data, but with a missing node or 2
         let standard_data_missing = [
@@ -409,6 +414,17 @@ mod tests {
         assert_eq!([0b10110, 0b1110, 0, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0], complement_3.data());
+    }
+    #[test]
+    fn matching_polynomial_adaptive() {
+        let fc_data = [
+            0b11111, 0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0
+        ];
+        let graph = BinaryGraph::from(fc_data);
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+         
     }
 
 }
