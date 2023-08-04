@@ -1,4 +1,6 @@
-pub trait Graph: Clone {
+use std::fmt::Debug; 
+
+pub trait Graph: Clone + Debug {
     fn remove_node(&mut self, node: usize, graph_size : usize);
     fn remove_edge(&mut self, node1: usize, node2: usize, graph_size: usize);
     fn edgeless_node_count(&self) -> usize;

@@ -1,7 +1,14 @@
-use crate::{binary_graph_matching::BinaryGraph, polynomials::poly2herme};
+use crate::{binary_graph_matching::BinaryGraph, polynomials::poly2herme, polynomials::herme2poly};
 use std::mem::size_of;
 use crate::traits::Graph;
 use polynomial::Polynomial;
+
+fn modulo(x: i64, y: i64) -> i64 {
+    ((x % y) + y) % y
+}
+fn ceil(x: i64, y: i64) -> i64 {
+    (x + y - 1) / y
+}
 
 /// This file contains functions that are used to calculate the matching
 /// polynomials for graphs. This method will use static memory for the
@@ -13,12 +20,12 @@ use polynomial::Polynomial;
 const POLY_SIZE: usize = size_of::<usize>()*8;
 
 pub fn calculate_matching_polynomial_pointer(graph: BinaryGraph) -> [u64; size_of::<usize>()*8] {
-   let poly: &mut [u64; POLY_SIZE] = &mut [0; POLY_SIZE];
-   for i in 0..size_of::<usize>()*8 {
-       poly[i] = 0;
-   }
-   _calculate_matching_polynomial_static(graph, poly);
-   return *poly
+        let poly: &mut [u64; POLY_SIZE] = &mut [0; POLY_SIZE];
+        for i in 0..POLY_SIZE {
+            poly[i] = 0;
+        }
+        _calculate_matching_polynomial_static(graph, poly);
+        return *poly
 }
 
 pub fn calculate_matching_polynomial_pointer_addresses(graph: BinaryGraph) -> ([u64; size_of::<usize>()*8], Vec<usize>) {
@@ -26,40 +33,38 @@ pub fn calculate_matching_polynomial_pointer_addresses(graph: BinaryGraph) -> ([
         let mut addresses: Vec<usize> = Vec::new(); 
         let address = 1;
 
-        for i in 0..size_of::<usize>()*8 {
+        for i in 0..POLY_SIZE {
             poly[i] = 0;
         }
         _calculate_matching_polynomial_static_addresses(graph, poly, address, &mut addresses);
         return (*poly, addresses)
 }
 
-pub fn calculate_matching_polynomial_adaptive(graph: BinaryGraph) -> ([u64; size_of::<usize>()*8]) {
-    let poly: &mut [u64; POLY_SIZE] = &mut [0; POLY_SIZE];
-    let hermites: &mut [f32; POLY_SIZE * POLY_SIZE] = &mut [0.0; POLY_SIZE * POLY_SIZE];
+pub fn calculate_matching_polynomial_adaptive(graph: BinaryGraph) -> [i64; POLY_SIZE] {
+        let poly: &mut [i64; POLY_SIZE] = &mut [0; POLY_SIZE];
+        let hermites: &mut [f32; POLY_SIZE * POLY_SIZE] = &mut [0.0; POLY_SIZE * POLY_SIZE];
 
-    // cache the Hermite polynomials
-    for i in 0..graph.initial_graph_size() + 1 {
-        // make a monomial that is of order i
-        let data = [0.0; POLY_SIZE];
+        // cache the Hermite polynomials
+        for i in 0..graph.initial_graph_size() + 1 {
+            // make a monomial that is of order i
+            let data = [0.0; POLY_SIZE];
+            let mut coeffics = data[..i].to_vec();
+            coeffics.push(1.0);
+            let monomial = Polynomial::new(coeffics);
 
-        let mut coeffics = data[..i].to_vec();
-        coeffics.push(1.0);
-        let monomial = Polynomial::new(coeffics);
-        let hermite = poly2herme(&monomial);
-        hermites[i*POLY_SIZE..i*POLY_SIZE + i + 1].copy_from_slice(&hermite.data());
-    }
-    // set the blank polynomial
-    for i in 0..size_of::<usize>()*8 {
-        poly[i] = 0;
-    }
-    
-    if graph.density() >= 0.5 {
-        _calculate_matching_polynomial_static_adaptive(graph, poly, true, hermites);
-    } else {
-        _calculate_matching_polynomial_static_adaptive(graph, poly, false, hermites);
+            // and treat it like it is a Hermite polynomial
+            let hermite = herme2poly(&monomial);
+            hermites[i*POLY_SIZE..i*POLY_SIZE + i + 1].copy_from_slice(&hermite.data());
+        }
 
-    }
-    return *poly
+        // set the blank polynomial
+        for i in 0..POLY_SIZE {
+            poly[i] = 0;
+        }
+        
+        // now run the recursive function that does it
+        _calculate_matching_polynomial_static_adaptive(graph, poly, false, hermites, 1);
+        return *poly
 }
 
 // From here are the recursive functions called by the functions above. 
@@ -69,12 +74,11 @@ pub fn calculate_matching_polynomial_adaptive(graph: BinaryGraph) -> ([u64; size
 fn _calculate_matching_polynomial_static<T: Graph>(graph: T, poly: &mut [u64; POLY_SIZE]) {
     if graph.edgeless() {
         let node_count = graph.edgeless_node_count();
+        println!("node_count: {}", node_count);
         poly[node_count] += 1;
-        //println!("edge reached!");
     } else {
         let (graph_prime, graph_prime_prime) = graph.get_graph_primes();
         _calculate_matching_polynomial_static(graph_prime_prime, poly);
-        println!("poly: {:?}", poly);
         _calculate_matching_polynomial_static(graph_prime, poly); // put this at the end as I think
     }
 }
@@ -95,36 +99,46 @@ fn _calculate_matching_polynomial_static_addresses<T: Graph>(graph: T, poly: &mu
 /// calculate_matching_polynomial_static, assumes that the graph is to have its
 /// polynomial calculated adaptively as the density of the relevant subraph
 /// changes over the course of the algorithm.
-fn _calculate_matching_polynomial_static_adaptive<T: Graph>(graph: T, poly: &mut [u64; POLY_SIZE], complement: bool, hermites: &[f32; POLY_SIZE * POLY_SIZE]) {
+fn _calculate_matching_polynomial_static_adaptive<T: Graph>(mut graph: T, poly: &mut [i64; POLY_SIZE], mut complement: bool, hermites: &[f32; POLY_SIZE * POLY_SIZE], mut sign_coeffic: i64) {
+    let graph_density = graph.density();
+    if graph_density >= 0.5 && !complement {
+        complement = true;
+        sign_coeffic = (-1 as i64).pow((graph.initial_graph_size() as u32 - graph.graph_size() as u32)/2) as i64;
+        println!("\n graph before complement: {:?}", graph);
+        graph = graph.complement();
+        println!("graph after complement: {:?}\n", graph);
+    }
     if graph.edgeless() {
-        let node_count = graph.edgeless_node_count();
+        let graph_size = graph.graph_size();
         if complement {
             // run the update as if in the Hermite basis
-            let hermite_coeffics = hermites[node_count*POLY_SIZE..node_count*POLY_SIZE + node_count + 1].to_vec();
-            for i in 0..node_count + 1 {
-                poly[i] += hermite_coeffics[i] as u64;
+            let hermite_coeffics = hermites[(graph_size) * POLY_SIZE..(graph_size) * POLY_SIZE + graph_size + 1].to_vec();
+            for i in 0..graph_size + 1 {
+                poly[i] += sign_coeffic * hermite_coeffics[i] as i64;
             }
+            println!("added hermite coeffics: {:?}", hermite_coeffics);
+            println!("poly after just having updated with hermite: {:?}; graph_size: {}", poly, graph_size);
+            println!("\n");
         } else {
             // run the update as if in the standard basis
-            poly[node_count] += 1;
+            //if modulo((graph_size + 2) as  i64, 4) == 0 {
+                poly[graph_size] += (-1 as i64).pow((graph.initial_graph_size() as u32 - graph_size as u32)/2);
+            println!("poly after just having updated without hermite: {:?}; graph_size: {}", poly, graph_size);
         }
     } else {
         let (graph_prime, graph_prime_prime) = graph.get_graph_primes();
-
-        // Handle graph_prime_prime
-        if graph_prime_prime.density() >= 0.5 {
-            let graph_prime_prime = graph_prime_prime.complement();
-            _calculate_matching_polynomial_static_adaptive(graph_prime_prime, poly, false, hermites);
-        } else {
-            _calculate_matching_polynomial_static_adaptive(graph_prime_prime, poly, false, hermites);
-        }
+        //println!("graph_prime: {:?}; graph_prime_prime: {:?}", graph_prime, graph_prime_prime);
+        _calculate_matching_polynomial_static_adaptive(graph_prime_prime,
+                                                           poly,
+                                                           complement,
+                                                           hermites, 
+                                                           sign_coeffic);
         // Handle graph_prime
-        if graph_prime.density() >= 0.5 {
-            let graph_prime = graph_prime.complement();
-            _calculate_matching_polynomial_static_adaptive(graph_prime, poly, false, hermites);
-        } else {
-            _calculate_matching_polynomial_static_adaptive(graph_prime, poly, false, hermites);
-        }
+        _calculate_matching_polynomial_static_adaptive(graph_prime,
+                                                       poly,
+                                                       complement,
+                                                       hermites, 
+                                                       sign_coeffic);
     }
 }
 
@@ -138,8 +152,6 @@ pub fn _calculate_matching_polynomial_binary<T: Graph>(graph: T) -> Polynomial<u
         let mut coeffics = vec![0; graph.edgeless_node_count()];
         coeffics.push(1);
         let poly = Polynomial::new(coeffics);
-        //println!("Polynomial: {:?}", poly);
-        //println!("graph {:?}", graph.data);
         return poly
     } else {
         // get G' and G''

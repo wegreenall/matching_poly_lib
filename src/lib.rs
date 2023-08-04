@@ -9,11 +9,12 @@ pub mod polynomials;
 use traits::Graph;
 use polynomial::Polynomial;
 use polynomials::{poly2herme,  hermadd, hermemulx , herme2poly};
-use crate::weighted_graph_matching::{WeightedGraph, _calculate_weighted_matching_polynomial_binary, get_weighted_deck, weight_from_address};
+use crate::weighted_graph_matching::{WeightedGraph, _calculate_weighted_matching_polynomial_binary, get_weighted_deck, weight_from_address, weighted_coefficient_calculation};
 
 pub use binary_graph_matching::{calculate_matching_polynomial_pointer, calculate_matching_polynomial_pointer_addresses, calculate_matching_polynomial_adaptive};
 pub use binary_graph_matching::{BinaryGraph, _calculate_matching_polynomial_binary};
 use matching_raw_memory::{calculate_matching_polynomial_raw, GraphProperties};
+use std::mem::size_of;
 
 pub mod traits;
 #[cfg(test)]
@@ -69,6 +70,7 @@ mod tests {
 
         assert_eq!(&matching_poly[..=graph_size], matching_poly_2.data());
     }
+
     #[test]
     fn raw_polynomial_calculation_fully_connected() {
         let data = [
@@ -123,6 +125,7 @@ mod tests {
         assert_eq!(weighted_matching_polynomial_1.data(), &[1.0, 0.0, 3.0, 0.0, 1.0]);
         assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
     }
+
     #[test]
     fn weighted_polynomial_test_2() {
         let data = [
@@ -157,6 +160,7 @@ mod tests {
         assert_eq!(weighted_matching_polynomial_1.data(), &[1.0, 0.0, 3.0, 0.0, 1.0]);
         assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
     }
+
     #[test]
     fn weighted_polynomial_test_3() {
         let data = [
@@ -197,10 +201,18 @@ mod tests {
         assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
     }
 
-    #[test] fn poly2herme_test() {
+    #[test]
+    fn poly2herme_test_1() {
         let poly = Polynomial::new(vec![0.0, 1.0, 2.0, 3.0]);
         let herm = poly2herme(&poly);
         assert_eq!(herm.data(), &[2.0, 10.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn poly2herme_test_2() {
+        let poly = Polynomial::new(vec![2.0, 0.0, -4.0, 0.0, 1.0]);
+        let herm = poly2herme(&poly);
+        assert_eq!(herm.data(), &[1.0, 0.0, 2.0, 0.0, 1.0]);
     }
 
     #[test]
@@ -208,6 +220,41 @@ mod tests {
         let herm = Polynomial::new(vec![2.0, 10.0, 2.0, 3.0]);
         let poly = herme2poly(&herm);
         assert_eq!(poly.data(), &[0.0, 1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn herme2poly_test_2() {
+        let herm = Polynomial::new(vec![1.0, 0.0, 2.0, 0.0, 1.0]);
+        let poly = herme2poly(&herm);
+        assert_eq!(poly.data(), &[2.0, 0.0, -4.0, 0.0, 1.0]);
+    }
+
+    #[test]
+    fn herme2poly_test_3() {
+        // n = 0
+        let herm = Polynomial::new(vec![1.0]);
+        let poly = herme2poly(&herm);
+        assert_eq!(poly.data(), &[1.0]);
+
+        // n = 1
+        let herm = Polynomial::new(vec![0.0, 1.0]);
+        let poly = herme2poly(&herm);
+        assert_eq!(poly.data(), &[0.0, 1.0]);
+
+        // n = 2
+        let herm = Polynomial::new(vec![0.0, 0.0, 1.0]);
+        let poly = herme2poly(&herm);
+        assert_eq!(poly.data(), &[-1.0, 0.0, 1.0]);
+
+        // n = 3
+        let herm = Polynomial::new(vec![0.0, 0.0, 0.0, 1.0]);
+        let poly = herme2poly(&herm);
+        assert_eq!(poly.data(), &[0.0, -3.0, 0.0, 1.0]);
+
+        // n = 4
+        let herm = Polynomial::new(vec![0.0, 0.0, 0.0, 0.0, 1.0]);
+        let poly = herme2poly(&herm);
+        assert_eq!(poly.data(), &[3.0, 0.0, -6.0, 0.0, 1.0]);
     }
 
     #[test]
@@ -225,6 +272,7 @@ mod tests {
         let test_data = vec![2.0, 7.0, 2.0, 3.0];
         assert_eq!(mul.data(), &test_data);
     }
+
     #[test]
     fn weight_from_address_test() {
         // set up the basic, initial data
@@ -362,8 +410,9 @@ mod tests {
         });
         assert_eq!(vec![8.0, 0.0, 8.0, 0.0, 1.0], polynomial_coefficients);
     }
+
     #[test]
-    fn complement_fc() {
+    fn test_complement_fc() {
         // fully_connected data
         let fc_data = [
             0b11111, 0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -377,8 +426,9 @@ mod tests {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0], complement.data());
     }
+
     #[test]
-    fn complement_standard() {
+    fn test_complement_standard() {
         // now, standard data
         let standard_data = [
             0b11101, 0b1001, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -387,14 +437,13 @@ mod tests {
         ];
         let graph_2 = BinaryGraph::from(standard_data);
         let complement_2 = graph_2.complement();
-        //println!("{:?}", complement_2.data());
         assert_eq!([0b10010, 0b1110, 0b101, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0], complement_2.data());
     }
-    #[test]
-    fn complement_standard_missing() {
 
+    #[test]
+    fn test_complement_standard_missing() {
         // now, standard data, but with a missing node or 2
         let standard_data_missing = [
             0b11001, 0b1001, 0, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -406,25 +455,241 @@ mod tests {
         for element in graph_3.data().iter().take(5) {
             println!("element {:b}", element);
         }
+
         // print the complement
         let complement_3 = graph_3.complement();
         for element in complement_3.data().iter().take(5) {
             println!("element {:b}", element);
         }
-        assert_eq!([0b10110, 0b1110, 0, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        assert_eq!([0b10010, 0b1010, 0, 0b10, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0], complement_3.data());
     }
+
     #[test]
-    fn matching_polynomial_adaptive() {
+    fn matching_polynomial_static() {
         let fc_data = [
-            0b11111, 0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0
         ];
         let graph = BinaryGraph::from(fc_data);
-        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
-         
+
+        let matching_polynomial = calculate_matching_polynomial_pointer(graph);
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [3, 0, 6, 0, 1]);
+
     }
+
+    #[test]
+    fn matching_polynomial_static_2() {
+        let standard_data = [
+            0b11001, 0b1001, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let graph = BinaryGraph::from(standard_data);
+
+        let matching_polynomial = calculate_matching_polynomial_pointer(graph);
+        println!("standard data matching polynomial {:?}", matching_polynomial);
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [0, 4, 0, 5, 0, 1]);
+    }
+
+    #[test]
+    fn matching_polynomial_static_3() {
+        let standard_data_missing = [
+            0b11001, 0b1001, 0, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let graph = BinaryGraph::from(standard_data_missing);
+        let matching_polynomial = calculate_matching_polynomial_pointer(graph);
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [1, 0, 4, 0, 1]);
+    }
+
+    #[test]
+    fn matching_polynomial_adaptive() {
+        // grpah size is 4
+        let fc_data = [
+            0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0
+        ];
+        let graph = BinaryGraph::from(fc_data);
+
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+        println!("We got this far...");
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [3, 0, -6, 0, 1]);
+        // grpah size is 5
+        let fc_data = [
+            0b11111, 0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0
+        ];
+        let graph = BinaryGraph::from(fc_data);
+
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+        println!("We got this far...");
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [0, 15, 0, -10, 0, 1]);
+    }
+
+    #[test]
+    fn matching_polynomial_adaptive_2() {
+        // grpah size is 4
+        // now, standard data
+        let standard_data = [
+            0b11001, 0b1001, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0,
+        ];
+        let graph = BinaryGraph::from(standard_data);
+
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [0, 4, 0, -5, 0, 1]);
+    }
+
+    #[test]
+    fn matching_polynomial_adaptive_3() {
+        let standard_data_without_missing = [
+            0b1101, 0b101, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0,
+        ];
+        let graph = BinaryGraph::from(standard_data_without_missing);
+
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+        println!("About to test the standard data without missing");
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [1, 0, -4, 0, 1]);
+    }
+
+
+    #[test]
+    fn matching_polynomial_adaptive_4() {
+        let standard_data_missing = [
+            0b11001, 0b1001, 0, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0,0
+        ];
+        //let graph = BinaryGraph::from(standard_data_missing);
+        let graph = BinaryGraph::from_graph_subset(standard_data_missing, 5);
+        println!("graph complement:{:?}", graph.complement());
+        //let graph = BinaryGraph::from_graph_subset(standard_data_missing, 5);
+
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+        println!("About to test the standard data with missing");
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [1, 0, -4, 0, 1]);
+    }
+    #[test]
+    fn matching_polynomial_adaptive_5() {
+        let chain_data = [
+            0b11000, 0b1100, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ];
+        let graph = BinaryGraph::from(chain_data);
+
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+        println!("Number of nodes: {}", graph.graph_size());
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [0, 3, 0, -4, 0, 1]);
+    }
+
+    #[test]
+    fn matching_polynomial_adaptive_6() {
+        let chain_data = [
+            0b110000, 0b11000, 0b1100, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ];
+        let graph = BinaryGraph::from(chain_data);
+
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+        println!("Number of nodes: {}", graph.graph_size());
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [-1, 0, 6, 0, -5, 0, 1]);
+    }
+    #[test]
+    fn matching_polynomial_adaptive_7() {
+        let chain_data = [
+            0b1100000, 0b110000, 0b11000, 0b1100, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ];
+        let graph = BinaryGraph::from(chain_data);
+
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+        //println!("");
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [0, -4, 0, 10, 0, -6, 0, 1]);
+    }
+    #[test]
+    fn matching_polynomial_adaptive_8() {
+        let chain_data = [
+            0b11000000, 0b1100000, 0b110000, 0b11000, 0b1100, 0b110, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        ];
+        let graph = BinaryGraph::from(chain_data);
+
+        let matching_polynomial = calculate_matching_polynomial_adaptive(graph);
+        //println!("About to test the standard data without missing");
+        assert_eq!(matching_polynomial[..graph.graph_size()+1], [1, 0, -10, 0, 15, 0, -7, 0, 1]);
+    }
+
+
+    #[test]
+    fn test_density() {
+        let fc_data = [
+            0b11111, 0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0
+        ];
+        let graph = BinaryGraph::from(fc_data);
+        assert_eq!(graph.density(), 1.0);
+    }
+
+    #[test]
+    fn test_edge_count() {
+        let fc_data = [
+            0b11111, 0b1111, 0b111, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0
+        ];
+        let graph = BinaryGraph::from(fc_data);
+        assert_eq!(graph.edge_count(), 10);
+    }
+
+    #[test]
+    fn test_edge_count_2() {
+        let standard_data_missing = [
+            0b11001, 0b1001, 0, 0b11, 0b1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
+        let graph = BinaryGraph::from(standard_data_missing);
+        assert_eq!(graph.edge_count(), 4);
+    }
+
+    #[test]
+    fn test_coefficient_calculation() {
+        let true_weights: [f32; 16] = [0.0, 2.0, 0.0, 2.0, 
+                                       2.0, 0.0, 2.0, 0.0,
+                                       0.0, 2.0, 0.0, 2.0, 
+                                       2.0, 0.0, 2.0, 0.0];
+        let true_poly = [3, 0, 6, 0, 1];
+
+        //let poly = Polynomial::new(vec![8.0, 0.0, 8.0, 0.0, 1.0]);
+        let mut poly = [0 as u64; size_of::<u64>() * 8];
+        let mut weights: [f32; 4096] = [0.0; 4096];
+        weights[..16].copy_from_slice(&true_weights);
+        poly[..5].copy_from_slice(&true_poly);
+        let weighted_coefficients = weighted_coefficient_calculation(poly, &weights, 4, 2);
+        //assert_eq!(weighted_coefficients[..5], [8.0, 0.0, 8.0, 0.0, 1.0]);
+    }
+
 
 }

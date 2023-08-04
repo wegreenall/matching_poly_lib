@@ -39,7 +39,6 @@ impl BinaryGraph {
             initial_graph_size,
         }
     }
-
     pub fn data(self) -> [usize; MAX_NODES] {
         self.data
     }
@@ -54,7 +53,6 @@ impl Graph for BinaryGraph {
         self.data
             .iter_mut()
             .for_each(|x| *x &= !(1<<graph_size.saturating_sub(node+1)));
-        println!("Node Removed! data: {:?}", self.data);
     }
 
     fn remove_edge(&mut self, node1: usize, node2: usize, graph_size: usize) {
@@ -89,6 +87,7 @@ impl Graph for BinaryGraph {
             .iter()
             .map(|x| x.count_ones() as usize)
             .sum::<usize>()
+            .saturating_sub(self.graph_size())
     }
 
     /// checks whether the graph is edgeless, i.e. if each of the elements
@@ -183,6 +182,9 @@ impl Graph for BinaryGraph {
             // the edge to drop goes between the starting node and the end of its last edge
             let trailing_zeros = clean_starting_node_data.trailing_zeros() as usize + 1;
             end_node = graph_size.saturating_sub(trailing_zeros);
+            //if end_node == 2 {
+                //println!("end_node: {}; trailing_zeros: {}; start_node {}", end_node, trailing_zeros, starting_node);
+            //}
         }
         let print_stuff: bool = false;
         if print_stuff {
@@ -205,28 +207,54 @@ impl Graph for BinaryGraph {
     fn density(&self) -> f32 {
         let edge_count = self.edge_count();
         let graph_size = self.graph_size();
-        return edge_count as f32 / (graph_size * (graph_size - 1)) as f32;
+        //println!("Calculating the density:edge_count: {}; graph_size: {}", edge_count, graph_size);
+        //println!("Density formula: {}", 2.0 * edge_count as f32 / (graph_size * (graph_size - 1)) as f32);
+        if graph_size == 0 || graph_size == 1 {
+            //println!("graph size is too small for density to make sensity");
+            0.0
+        } else {
+            2.0 * edge_count as f32 / (graph_size * (graph_size - 1)) as f32
+        }
+
     }
 
     fn complement(&self) -> Self {
         let mut new_data: [usize; MAX_NODES] = self.data.clone();
+        let nodes_to_take = self.initial_graph_size();
+        let mut zeros_mask = 0;
+        // since we will need to zero out the nodes that have edges pointing towards
+        // 0, we will first create a mask across all the nodes that is 0 where 
+        // necessary
+        for node in new_data
+            .iter()
+            .take(nodes_to_take) {
+                zeros_mask <<= 1;
+                if node != &0 {
+                    zeros_mask += 1;
+                }
+        }
 
         let data_update = new_data
             .iter()
-            .take(self.initial_graph_size()) // limit to the first N nodes
+            .take(nodes_to_take) // limit to the first N nodes
             .enumerate() 
-            .map(|(i, x)| {
-                if !(x == &(0 as usize)) {
-                 let mut z = !(x) & (x.next_power_of_two() - 1);
-                 z = z + (1 << (self.initial_graph_size - i - 1));
-                 z
-                } else {
-                    0
-                }
-            }
-            )// get the complement, masking against the size (so we don't make all leading 0s into 1s)
-            .collect::<Vec<usize>>();
+            .map(|(i, x)| 
+                {
+                    if !(x == &(0 as usize)) {
+                        // complement it and AND it with a mask ignoring the cap bit
+                        let mut z = !(x) & (x.next_power_of_two() - 1);
 
+                        // add the cap bit back in
+                        z = z + (1 << (self.initial_graph_size - i - 1));
+                        z &= zeros_mask;
+                        z
+                    } else {  
+                        // if this is a zero, zero out the corresponding 0s in the end 
+                        0
+                    }
+                })
+            .collect::<Vec<usize>>();
+        
         new_data[..self.initial_graph_size()].copy_from_slice(&data_update);
 
         BinaryGraph {
