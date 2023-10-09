@@ -207,10 +207,8 @@ impl Graph for BinaryGraph {
     fn density(&self) -> f32 {
         let edge_count = self.edge_count();
         let graph_size = self.graph_size();
-        //println!("Calculating the density:edge_count: {}; graph_size: {}", edge_count, graph_size);
-        //println!("Density formula: {}", 2.0 * edge_count as f32 / (graph_size * (graph_size - 1)) as f32);
+
         if graph_size == 0 || graph_size == 1 {
-            //println!("graph size is too small for density to make sensity");
             0.0
         } else {
             2.0 * edge_count as f32 / (graph_size * (graph_size - 1)) as f32

@@ -74,7 +74,6 @@ pub fn calculate_matching_polynomial_adaptive(graph: BinaryGraph) -> [i64; POLY_
 fn _calculate_matching_polynomial_static<T: Graph>(graph: T, poly: &mut [u64; POLY_SIZE]) {
     if graph.edgeless() {
         let node_count = graph.edgeless_node_count();
-        println!("node_count: {}", node_count);
         poly[node_count] += 1;
     } else {
         let (graph_prime, graph_prime_prime) = graph.get_graph_primes();
@@ -104,9 +103,7 @@ fn _calculate_matching_polynomial_static_adaptive<T: Graph>(mut graph: T, poly: 
     if graph_density >= 0.5 && !complement {
         complement = true;
         sign_coeffic = (-1 as i64).pow((graph.initial_graph_size() as u32 - graph.graph_size() as u32)/2) as i64;
-        println!("\n graph before complement: {:?}", graph);
         graph = graph.complement();
-        println!("graph after complement: {:?}\n", graph);
     }
     if graph.edgeless() {
         let graph_size = graph.graph_size();
@@ -116,18 +113,12 @@ fn _calculate_matching_polynomial_static_adaptive<T: Graph>(mut graph: T, poly: 
             for i in 0..graph_size + 1 {
                 poly[i] += sign_coeffic * hermite_coeffics[i] as i64;
             }
-            println!("added hermite coeffics: {:?}", hermite_coeffics);
-            println!("poly after just having updated with hermite: {:?}; graph_size: {}", poly, graph_size);
-            println!("\n");
         } else {
-            // run the update as if in the standard basis
-            //if modulo((graph_size + 2) as  i64, 4) == 0 {
+                // run the update as if in the standard basis
                 poly[graph_size] += (-1 as i64).pow((graph.initial_graph_size() as u32 - graph_size as u32)/2);
-            println!("poly after just having updated without hermite: {:?}; graph_size: {}", poly, graph_size);
         }
     } else {
         let (graph_prime, graph_prime_prime) = graph.get_graph_primes();
-        //println!("graph_prime: {:?}; graph_prime_prime: {:?}", graph_prime, graph_prime_prime);
         _calculate_matching_polynomial_static_adaptive(graph_prime_prime,
                                                            poly,
                                                            complement,
@@ -148,7 +139,6 @@ pub fn _calculate_matching_polynomial_binary<T: Graph>(graph: T) -> Polynomial<u
     // representations is a power of two.
     if graph.edgeless() { // i.e. we're at the base case.
         // produce a sequence of coefficients the same length as the number of vertices
-        //println!("Hit edgeless graph! with {} nodes", graph.edgeless_node_count());
         let mut coeffics = vec![0; graph.edgeless_node_count()];
         coeffics.push(1);
         let poly = Polynomial::new(coeffics);
