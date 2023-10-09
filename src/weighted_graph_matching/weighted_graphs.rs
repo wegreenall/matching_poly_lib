@@ -85,15 +85,13 @@ pub fn _calculate_weighted_matching_polynomial_binary(weighted_graph: WeightedGr
         // G' = G - an edge
         // G'' = G - the nodes connected to the edge removed to get G'
         let (graph_prime, graph_prime_prime, weight) = weighted_graph.get_graph_primes();
+        //println!("{}", weight);
 
         let poly_1 = _calculate_weighted_matching_polynomial_binary(graph_prime);
         let poly_2 = _calculate_weighted_matching_polynomial_binary(graph_prime_prime);
          
         // convert the weight to a 1d polynomial to make it multiplicable
-        //let squared_weight = weight.checked_pow(2);
-        let squared_weight = weight.powi(2);
-        //let squared_weight = if let x = squared_weight { x } else { return Polynomial::new(vec![0.0]) };
-        let new_poly = Polynomial::new(vec![squared_weight]);
+        let new_poly = Polynomial::new(vec![weight]);
         let poly = poly_1 + new_poly * poly_2;
         return poly
     }

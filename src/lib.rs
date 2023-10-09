@@ -123,7 +123,7 @@ mod tests {
         assert_eq!(matching_polynomial_1.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(matching_polynomial_2.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(weighted_matching_polynomial_1.data(), &[1.0, 0.0, 3.0, 0.0, 1.0]);
-        assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
+        assert_eq!(weighted_matching_polynomial_2.data(), &[4.0, 0.0, 6.0, 0.0, 1.0]);
     }
 
     #[test]
@@ -158,7 +158,7 @@ mod tests {
         assert_eq!(matching_polynomial_1.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(matching_polynomial_2.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(weighted_matching_polynomial_1.data(), &[1.0, 0.0, 3.0, 0.0, 1.0]);
-        assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
+        assert_eq!(weighted_matching_polynomial_2.data(), &[4.0, 0.0, 6.0, 0.0, 1.0]);
     }
 
     #[test]
@@ -198,7 +198,7 @@ mod tests {
         assert_eq!(matching_polynomial_1.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(matching_polynomial_2.data(), &[1, 0, 3, 0, 1]);
         assert_eq!(weighted_matching_polynomial_1.data(), &[1.0, 0.0, 3.0, 0.0, 1.0]);
-        assert_eq!(weighted_matching_polynomial_2.data(), &[16.0, 0.0, 12.0, 0.0, 1.0]);
+        assert_eq!(weighted_matching_polynomial_2.data(), &[4.0, 0.0, -6.0, 0.0, 1.0]);
     }
 
     #[test]
@@ -675,7 +675,7 @@ mod tests {
     }
 
     #[test]
-    fn test_coefficient_calculation() {
+    fn test_weighted_coefficient_calculation() {
         let true_weights: [f32; 16] = [0.0, 2.0, 0.0, 2.0, 
                                        2.0, 0.0, 2.0, 0.0,
                                        0.0, 2.0, 0.0, 2.0, 
@@ -687,8 +687,8 @@ mod tests {
         let mut weights: [f32; 4096] = [0.0; 4096];
         weights[..16].copy_from_slice(&true_weights);
         poly[..5].copy_from_slice(&true_poly);
-        let weighted_coefficients = weighted_coefficient_calculation(poly, &weights, 4, 2);
-        //assert_eq!(weighted_coefficients[..5], [8.0, 0.0, 8.0, 0.0, 1.0]);
+        let weighted_coefficient = weighted_coefficient_calculation(&weights, 4, 4);
+        assert_eq!(weighted_coefficient, 8.0);
     }
 
 
