@@ -7,7 +7,6 @@ pub mod binary_graph_matching;
 pub mod polynomials;
 
 use traits::Graph;
-use polynomial::Polynomial;
 use polynomials::{poly2herme,  hermadd, hermemulx , herme2poly};
 use crate::weighted_graph_matching::{WeightedGraph, _calculate_weighted_matching_polynomial_binary, get_weighted_deck, weight_from_address, weighted_coefficient_calculation};
 
